@@ -14,12 +14,36 @@ export function buildApp() {
 
   app.register(multiTenancy, {
     tenants: [
-      { id: 'clinic1', conn: process.env.DB_CLINIC1! },
-      { id: 'clinic2', conn: process.env.DB_CLINIC2! },
-      { id: 'clinic3', conn: process.env.DB_CLINIC3! },
-      { id: 'clinic4', conn: process.env.DB_CLINIC4! },
-      { id: 'clinic5', conn: process.env.DB_CLINIC5! },
-      { id: 'clinic6', conn: process.env.DB_CLINIC6! },
+      {
+        id: 'clinic1',
+        type: (process.env.DB_TYPE_CLINIC1 as 'postgres' | 'mysql') || 'postgres',
+        conn: process.env.DB_CLINIC1!,
+      },
+      {
+        id: 'clinic2',
+        type: (process.env.DB_TYPE_CLINIC2 as 'postgres' | 'mysql') || 'postgres',
+        conn: process.env.DB_CLINIC2!,
+      },
+      {
+        id: 'clinic3',
+        type: (process.env.DB_TYPE_CLINIC3 as 'postgres' | 'mysql') || 'postgres',
+        conn: process.env.DB_CLINIC3!,
+      },
+      {
+        id: 'clinic4',
+        type: (process.env.DB_TYPE_CLINIC4 as 'postgres' | 'mysql') || 'postgres',
+        conn: process.env.DB_CLINIC4!,
+      },
+      {
+        id: 'clinic5',
+        type: (process.env.DB_TYPE_CLINIC5 as 'postgres' | 'mysql') || 'postgres',
+        conn: process.env.DB_CLINIC5!,
+      },
+      {
+        id: 'clinic6',
+        type: (process.env.DB_TYPE_CLINIC6 as 'postgres' | 'mysql') || 'postgres',
+        conn: process.env.DB_CLINIC6!,
+      },
     ],
   });
 

@@ -1,8 +1,8 @@
 import 'fastify';
-import { Pool } from 'pg';
+import { DbPool } from './db.types';
 
 declare module 'fastify' {
   interface FastifyRequest {
-    db: Pool;
+    db: DbPool;
   }
 }

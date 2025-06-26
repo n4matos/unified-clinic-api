@@ -1,19 +1,19 @@
-import { Pool } from 'pg';
+import { DbPool } from '../types/db.types';
 import { Patient } from '../types/entities.types';
 
 export class PatientRepository {
-  async findAll(pool: Pool): Promise<Patient[]> {
+  async findAll(pool: DbPool): Promise<Patient[]> {
     const result = await pool.query('SELECT * FROM patients');
     return result.rows;
   }
 
-  async findById(pool: Pool, id: string): Promise<Patient | null> {
+  async findById(pool: DbPool, id: string): Promise<Patient | null> {
     const result = await pool.query('SELECT * FROM patients WHERE id = $1', [id]);
     return result.rows[0] || null;
   }
 
   async create(
-    pool: Pool,
+    pool: DbPool,
     patient: Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<Patient> {
     const result = await pool.query(
@@ -25,7 +25,7 @@ export class PatientRepository {
   }
 
   async update(
-    pool: Pool,
+    pool: DbPool,
     id: string,
     patient: Partial<Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>>,
   ): Promise<Patient | null> {
@@ -40,7 +40,7 @@ export class PatientRepository {
     return result.rows[0] || null;
   }
 
-  async delete(pool: Pool, id: string): Promise<void> {
+  async delete(pool: DbPool, id: string): Promise<void> {
     await pool.query('DELETE FROM patients WHERE id = $1', [id]);
   }
 }

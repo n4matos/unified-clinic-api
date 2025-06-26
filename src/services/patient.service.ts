@@ -1,34 +1,34 @@
-import { Pool } from 'pg';
+import { DbPool } from '../types/db.types';
 import { Patient } from '../types/entities.types';
 import { PatientRepository } from '../repositories/patient.repository';
 
 export class PatientService {
   constructor(private repository: PatientRepository) {}
 
-  async getAll(pool: Pool): Promise<Patient[]> {
+  async getAll(pool: DbPool): Promise<Patient[]> {
     return this.repository.findAll(pool);
   }
 
-  async getById(pool: Pool, id: string): Promise<Patient | null> {
+  async getById(pool: DbPool, id: string): Promise<Patient | null> {
     return this.repository.findById(pool, id);
   }
 
   async create(
-    pool: Pool,
+    pool: DbPool,
     data: Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<Patient> {
     return this.repository.create(pool, data);
   }
 
   async update(
-    pool: Pool,
+    pool: DbPool,
     id: string,
     data: Partial<Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>>,
   ): Promise<Patient | null> {
     return this.repository.update(pool, id, data);
   }
 
-  async delete(pool: Pool, id: string): Promise<void> {
+  async delete(pool: DbPool, id: string): Promise<void> {
     return this.repository.delete(pool, id);
   }
 }
