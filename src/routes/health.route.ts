@@ -1,8 +1,8 @@
 import { FastifyInstance } from 'fastify';
-import { HealthController } from '../controllers/health.controller';
+import { HealthService } from '../services/health.service';
 
 export default async function (app: FastifyInstance) {
-  const controller = new HealthController();
+  const healthService = new HealthService();
 
   app.get(
     '/health',
@@ -11,11 +11,21 @@ export default async function (app: FastifyInstance) {
         response: {
           200: {
             type: 'object',
-            properties: { status: { type: 'string' } },
+            properties: {
+              status: { type: 'string' },
+              timestamp: { type: 'string' },
+              database: { type: 'string' },
+            },
           },
         },
       },
     },
-    controller.check.bind(controller),
+    async (request, reply) => {
+      const healthStatus = await healthService.status();
+
+      const statusCode = healthStatus.status === 'ok' ? 200 : 503;
+
+      return reply.code(statusCode).send(healthStatus);
+    },
   );
 }

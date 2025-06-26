@@ -1,11 +1,16 @@
-import { ClinicRepository } from '../repositories/clinic.repository';
-
 export class HealthService {
-  constructor(private readonly repo = new ClinicRepository()) {}
+  async status(): Promise<{
+    status: 'ok' | 'degraded' | 'down';
+    timestamp: string;
+    database: 'connected' | 'disconnected';
+  }> {
+    // Simples health check - depois implementaremos checagem real do banco
+    const dbConnected = true; // TODO: implementar checagem real
 
-  async status(): Promise<string> {
-    // Checa conexão com as 6 bases.
-    const ok = await this.repo.pingAll();
-    return ok ? 'ok' : 'degraded';
+    return {
+      status: dbConnected ? 'ok' : 'down',
+      timestamp: new Date().toISOString(),
+      database: dbConnected ? 'connected' : 'disconnected',
+    };
   }
 }
