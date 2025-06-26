@@ -4,9 +4,9 @@ import { PatientService } from '../services/patient.service';
 import { PatientRepository } from '../repositories/patient.repository';
 
 export default fp(async (app: FastifyInstance) => {
-  const patientRepository = new PatientRepository(app.pg);
+  const patientRepository = new PatientRepository();
   const patientService = new PatientService(patientRepository);
-  // GET /patients - Lista todos os pacientes
+
   app.get(
     '/patients',
     {
@@ -23,7 +23,7 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
-      const patients = await patientService.getAll();
+      const patients = await patientService.getAll(request.db);
       return reply.send({
         patients,
         message: 'Pacientes listados com sucesso',
@@ -31,7 +31,6 @@ export default fp(async (app: FastifyInstance) => {
     },
   );
 
-  // GET /patients/:id - Busca paciente por ID
   app.get(
     '/patients/:id',
     {
@@ -56,7 +55,7 @@ export default fp(async (app: FastifyInstance) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const patient = await patientService.getById(id);
+      const patient = await patientService.getById(request.db, id);
       return reply.send({
         patient,
         message: patient ? 'Paciente encontrado' : 'Paciente não encontrado',
@@ -64,7 +63,6 @@ export default fp(async (app: FastifyInstance) => {
     },
   );
 
-  // POST /patients - Cria novo paciente
   app.post(
     '/patients',
     {
@@ -96,7 +94,7 @@ export default fp(async (app: FastifyInstance) => {
         import('../types/entities.types').Patient,
         'id' | 'createdAt' | 'updatedAt'
       >;
-      const patient = await patientService.create(body);
+      const patient = await patientService.create(request.db, body);
       return reply.code(201).send({
         patient,
         message: 'Paciente criado com sucesso',
@@ -104,7 +102,6 @@ export default fp(async (app: FastifyInstance) => {
     },
   );
 
-  // PUT /patients/:id - Atualiza paciente
   app.put(
     '/patients/:id',
     {
@@ -133,7 +130,7 @@ export default fp(async (app: FastifyInstance) => {
       const body = request.body as Partial<
         Omit<import('../types/entities.types').Patient, 'id' | 'createdAt' | 'updatedAt'>
       >;
-      const patient = await patientService.update(id, body);
+      const patient = await patientService.update(request.db, id, body);
       return reply.send({
         patient,
         message: patient ? 'Paciente atualizado com sucesso' : 'Paciente não encontrado',
@@ -141,7 +138,6 @@ export default fp(async (app: FastifyInstance) => {
     },
   );
 
-  // DELETE /patients/:id - Remove paciente
   app.delete(
     '/patients/:id',
     {
@@ -162,7 +158,7 @@ export default fp(async (app: FastifyInstance) => {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      await patientService.delete(id);
+      await patientService.delete(request.db, id);
       return reply.code(204).send();
     },
   );
