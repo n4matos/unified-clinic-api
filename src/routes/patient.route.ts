@@ -1,6 +1,11 @@
+import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
+import { PatientService } from '../services/patient.service';
+import { PatientRepository } from '../repositories/patient.repository';
 
-export default async function (app: FastifyInstance) {
+export default fp(async (app: FastifyInstance) => {
+  const patientRepository = new PatientRepository(app.pg);
+  const patientService = new PatientService(patientRepository);
   // GET /patients - Lista todos os pacientes
   app.get(
     '/patients',
@@ -18,10 +23,10 @@ export default async function (app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      // TODO: implementar busca de pacientes
+      const patients = await patientService.getAll();
       return reply.send({
-        patients: [],
-        message: 'Endpoint implementado - aguardando implementação do serviço',
+        patients,
+        message: 'Pacientes listados com sucesso',
       });
     },
   );
@@ -51,11 +56,10 @@ export default async function (app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-
-      // TODO: implementar busca por ID
+      const patient = await patientService.getById(id);
       return reply.send({
-        patient: null,
-        message: `Buscando paciente com ID: ${id} - aguardando implementação`,
+        patient,
+        message: patient ? 'Paciente encontrado' : 'Paciente não encontrado',
       });
     },
   );
@@ -88,10 +92,14 @@ export default async function (app: FastifyInstance) {
       },
     },
     async (request, reply) => {
-      // TODO: implementar criação
+      const body = request.body as Omit<
+        import('../types/entities.types').Patient,
+        'id' | 'createdAt' | 'updatedAt'
+      >;
+      const patient = await patientService.create(body);
       return reply.code(201).send({
-        patient: request.body,
-        message: 'Paciente criado - aguardando implementação do serviço',
+        patient,
+        message: 'Paciente criado com sucesso',
       });
     },
   );
@@ -122,11 +130,13 @@ export default async function (app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-
-      // TODO: implementar atualização
+      const body = request.body as Partial<
+        Omit<import('../types/entities.types').Patient, 'id' | 'createdAt' | 'updatedAt'>
+      >;
+      const patient = await patientService.update(id, body);
       return reply.send({
-        patient: { id, data: request.body },
-        message: 'Paciente atualizado - aguardando implementação',
+        patient,
+        message: patient ? 'Paciente atualizado com sucesso' : 'Paciente não encontrado',
       });
     },
   );
@@ -152,9 +162,8 @@ export default async function (app: FastifyInstance) {
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-
-      // TODO: implementar exclusão
+      await patientService.delete(id);
       return reply.code(204).send();
     },
   );
-}
+});

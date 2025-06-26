@@ -1,0 +1,34 @@
+### Listar todos os pacientes
+GET http://localhost:3000/patients
+Accept: application/json
+
+### Buscar paciente por ID (substitua pelo ID real)
+GET http://localhost:3000/patients/{{patientId}}
+Accept: application/json
+
+### Criar novo paciente
+POST http://localhost:3000/patients
+Content-Type: application/json
+
+{
+  "name": "Ana Teste",
+  "email": "ana@exemplo.com",
+  "phone": "11988887777",
+  "dateOfBirth": "1992-03-15",
+  "address": "Rua Teste, 123"
+}
+
+### Atualizar paciente (substitua pelo ID real)
+PUT http://localhost:3000/patients/{{patientId}}
+Content-Type: application/json
+
+{
+  "name": "Ana Teste Atualizada",
+  "email": "ana@exemplo.com",
+  "phone": "11988887777",
+  "dateOfBirth": "1992-03-15",
+  "address": "Rua Teste, 123"
+}
+
+### Remover paciente (substitua pelo ID real)
+DELETE http://localhost:3000/patients/{{patientId}}
