@@ -10,7 +10,6 @@ interface TenantConfig {
   type: 'postgres' | 'mysql';
 }
 
-
 class MysqlPoolWrapper implements DbPool {
   constructor(private pool: mysql.Pool) {}
   async query<T = any>(sql: string, params?: any[]): Promise<{ rows: T[] }> {
@@ -22,34 +21,155 @@ class MysqlPoolWrapper implements DbPool {
   }
 }
 
-export default fp(async (app: FastifyInstance, opts: { tenants: TenantConfig[] }) => {
-  const pools = new Map<string, DbPool>();
+export default fp(
+  async (app: FastifyInstance, opts: { tenants: TenantConfig[] }) => {
+    const pools = new Map<string, DbPool>();
+    const initErrors: string[] = [];
 
-  for (const t of opts.tenants) {
-    let pool: DbPool;
-    if (t.type === 'postgres') {
-      pool = new PgPool({ connectionString: t.conn });
-    } else if (t.type === 'mysql') {
-      const mysqlPool = mysql.createPool(t.conn);
-      pool = new MysqlPoolWrapper(mysqlPool);
-    } else {
-      throw new Error(`Unknown DB type for clinic ${t.id}`);
+    // Função para testar conexão
+    async function testConnection(pool: DbPool, clinicId: string): Promise<boolean> {
+      try {
+        await pool.query('SELECT 1');
+        return true;
+      } catch (error) {
+        app.log.error(`Connection test failed for clinic ${clinicId}:`, error);
+        return false;
+      }
     }
-    pools.set(t.id, pool);
-    app.log.info(`Pool criado p/ clínica ${t.id}`);
-  }
 
-  app.decorateRequest('db', null as unknown as DbPool);
+    // Inicializar pools com validação
+    for (const t of opts.tenants) {
+      try {
+        let pool: DbPool;
 
-  app.addHook('preHandler', (req, _reply, done) => {
-    const clinic = req.headers['x-clinic-id'] as string | undefined;
-    const pool = clinic && pools.get(clinic);
-    if (!pool) return done(new Error('Clinic not found'));
-    (req as any).db = pool;
-    done();
-  });
+        if (t.type === 'postgres') {
+          pool = new PgPool({
+            connectionString: t.conn,
+            max: 10, // Limite de conexões
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 5000,
+          });
+        } else if (t.type === 'mysql') {
+          const mysqlPool = mysql.createPool(t.conn);
+          pool = new MysqlPoolWrapper(mysqlPool);
+        } else {
+          throw new Error(`Unknown DB type for clinic ${t.id}`);
+        }
 
-  app.addHook('onClose', async () => {
-    for (const p of pools.values()) await p.end();
-  });
-}, { name: 'multiTenancy' });
+        // Testar conexão
+        const isConnected = await testConnection(pool, t.id);
+        if (!isConnected) {
+          initErrors.push(`Failed to connect to database for clinic ${t.id}`);
+          await pool.end();
+          continue;
+        }
+
+        pools.set(t.id, pool);
+        app.log.info(`✅ Pool criado e testado para clínica ${t.id} (${t.type})`);
+      } catch (error) {
+        const errorMsg = `Failed to initialize pool for clinic ${t.id}: ${error}`;
+        initErrors.push(errorMsg);
+        app.log.error(errorMsg);
+      }
+    }
+
+    // Verificar se pelo menos uma clínica foi inicializada
+    if (pools.size === 0) {
+      throw new Error(`No database pools could be initialized. Errors: ${initErrors.join('; ')}`);
+    }
+
+    if (initErrors.length > 0) {
+      app.log.warn(`Some clinics failed to initialize: ${initErrors.join('; ')}`);
+    }
+
+    app.log.info(
+      `Multi-tenancy initialized with ${pools.size} clinic(s): ${Array.from(pools.keys()).join(', ')}`,
+    );
+
+    // Endpoint para verificar status das clínicas
+    app.get('/health/clinics', async (request, reply) => {
+      const clinicsStatus = await Promise.allSettled(
+        Array.from(pools.entries()).map(async ([clinicId, pool]) => {
+          try {
+            await pool.query('SELECT 1');
+            return {
+              clinicId,
+              status: 'healthy',
+              type: opts.tenants.find((t) => t.id === clinicId)?.type,
+            };
+          } catch (error) {
+            return { clinicId, status: 'unhealthy', error: (error as Error).message };
+          }
+        }),
+      );
+
+      const results = clinicsStatus.map((result) =>
+        result.status === 'fulfilled' ? result.value : result.reason,
+      );
+
+      const healthyCount = results.filter((r) => r.status === 'healthy').length;
+      const overallStatus = healthyCount === results.length ? 'healthy' : 'degraded';
+
+      return reply.send({
+        status: overallStatus,
+        totalClinics: results.length,
+        healthyClinics: healthyCount,
+        clinics: results,
+      });
+    });
+
+    app.decorateRequest('db', null as unknown as DbPool);
+
+    app.addHook('preHandler', (req, reply, done) => {
+      const clinicId = req.headers['x-clinic-id'] as string | undefined;
+
+      // Validação mais robusta
+      if (!clinicId) {
+        app.log.warn('Missing x-clinic-id header', {
+          url: req.url,
+          method: req.method,
+          ip: req.ip,
+        });
+        return reply.code(400).send({
+          error: 'Header x-clinic-id é obrigatório',
+          code: 'MISSING_CLINIC_ID',
+        });
+      }
+
+      const pool = pools.get(clinicId);
+      if (!pool) {
+        app.log.error('Invalid clinic ID', {
+          clinicId,
+          availableClinics: Array.from(pools.keys()),
+          url: req.url,
+          method: req.method,
+        });
+        return reply.code(404).send({
+          error: `Clínica '${clinicId}' não encontrada`,
+          code: 'CLINIC_NOT_FOUND',
+          availableClinics: Array.from(pools.keys()),
+        });
+      }
+
+      (req as any).db = pool;
+      app.log.debug('Database pool assigned', { clinicId, url: req.url });
+      done();
+    });
+
+    app.addHook('onClose', async () => {
+      app.log.info('Closing database pools...');
+      const closePromises = Array.from(pools.entries()).map(async ([clinicId, pool]) => {
+        try {
+          await pool.end();
+          app.log.info(`✅ Pool closed for clinic ${clinicId}`);
+        } catch (error) {
+          app.log.error(`❌ Error closing pool for clinic ${clinicId}:`, error);
+        }
+      });
+
+      await Promise.allSettled(closePromises);
+      app.log.info('All database pools closed');
+    });
+  },
+  { name: 'multiTenancy' },
+);
