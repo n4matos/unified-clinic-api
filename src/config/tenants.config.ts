@@ -8,46 +8,18 @@ interface TenantConfig {
 
 export const TENANT_CONFIGS: TenantConfig[] = [
   {
-    id: 'clinic-1',
+    id: '1',
     name: 'Clínica São Paulo',
-    type: (process.env.DB_TYPE_CLINIC1 as 'postgres' | 'mysql') || 'postgres',
-    conn: process.env.DB_CLINIC1 || 'postgres://user:password@localhost:5432/clinic1',
+    type: 'postgres',
+    conn: 'postgres://user:password@db_postgres:5432/unified_clinic',
     active: true,
   },
   {
-    id: 'clinic-2',
+    id: '2',
     name: 'Clínica Rio de Janeiro',
-    type: (process.env.DB_TYPE_CLINIC2 as 'postgres' | 'mysql') || 'postgres',
-    conn: process.env.DB_CLINIC2 || 'postgres://user:password@localhost:5432/clinic2',
+    type: 'mysql',
+    conn: 'mysql://user:password@db_mysql:3306/unified_clinic_mysql',
     active: true,
-  },
-  {
-    id: 'clinic-3',
-    name: 'Clínica Belo Horizonte',
-    type: (process.env.DB_TYPE_CLINIC3 as 'postgres' | 'mysql') || 'postgres',
-    conn: process.env.DB_CLINIC3 || 'postgres://user:password@localhost:5432/clinic3',
-    active: !!process.env.DB_CLINIC3, // Só ativa se tiver variável de ambiente
-  },
-  {
-    id: 'clinic-4',
-    name: 'Clínica Salvador',
-    type: (process.env.DB_TYPE_CLINIC4 as 'postgres' | 'mysql') || 'postgres',
-    conn: process.env.DB_CLINIC4 || 'postgres://user:password@localhost:5432/clinic4',
-    active: !!process.env.DB_CLINIC4,
-  },
-  {
-    id: 'clinic-5',
-    name: 'Clínica Brasília',
-    type: (process.env.DB_TYPE_CLINIC5 as 'postgres' | 'mysql') || 'postgres',
-    conn: process.env.DB_CLINIC5 || 'postgres://user:password@localhost:5432/clinic5',
-    active: !!process.env.DB_CLINIC5,
-  },
-  {
-    id: 'clinic-6',
-    name: 'Clínica Recife',
-    type: (process.env.DB_TYPE_CLINIC6 as 'postgres' | 'mysql') || 'postgres',
-    conn: process.env.DB_CLINIC6 || 'postgres://user:password@localhost:5432/clinic6',
-    active: !!process.env.DB_CLINIC6,
   },
 ];
 

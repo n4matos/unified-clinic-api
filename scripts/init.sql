@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS patients (
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255),
   phone VARCHAR(50),
-  date_of_birth DATE,
+  birth_date DATE,
   address VARCHAR(255),
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()

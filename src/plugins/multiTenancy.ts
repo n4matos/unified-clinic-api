@@ -11,6 +11,7 @@ interface TenantConfig {
 }
 
 class MysqlPoolWrapper implements DbPool {
+  type: 'mysql' = 'mysql';
   constructor(private pool: mysql.Pool) {}
   async query<T = any>(sql: string, params?: any[]): Promise<{ rows: T[] }> {
     const [rows] = await this.pool.query(sql, params);
@@ -32,7 +33,7 @@ export default fp(
         await pool.query('SELECT 1');
         return true;
       } catch (error) {
-        app.log.error(`Connection test failed for clinic ${clinicId}:`, error);
+        app.log.error({ err: error }, `Connection test failed for clinic ${clinicId}`);
         return false;
       }
     }
@@ -121,17 +122,17 @@ export default fp(
     app.decorateRequest('db', null as unknown as DbPool);
 
     app.addHook('preHandler', (req, reply, done) => {
-      const clinicId = req.headers['x-clinic-id'] as string | undefined;
+      const clinicId = req.headers['clinicid'] as string | undefined;
 
       // Validação mais robusta
       if (!clinicId) {
-        app.log.warn('Missing x-clinic-id header', {
+        app.log.warn('Missing clinicId header', {
           url: req.url,
           method: req.method,
           ip: req.ip,
         });
         return reply.code(400).send({
-          error: 'Header x-clinic-id é obrigatório',
+          error: 'Header clinicId é obrigatório',
           code: 'MISSING_CLINIC_ID',
         });
       }

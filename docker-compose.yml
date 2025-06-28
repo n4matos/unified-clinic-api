@@ -1,27 +1,50 @@
 version: '3.8'
 services:
-  db:
+  db_postgres:
     image: postgres:16
     restart: always
     environment:
       POSTGRES_DB: unified_clinic
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-    ports:
-      - '5432:5432'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d unified_clinic"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  db_mysql:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_DATABASE: unified_clinic_mysql
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root_password
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./scripts/init-mysql.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
   api:
     build: .
     command: npm run dev
     environment:
-      DATABASE_URL: postgres://user:password@db:5432/unified_clinic
+      DATABASE_URL: postgres://user:password@db_postgres:5432/unified_clinic
     ports:
       - '3000:3000'
     depends_on:
-      - db
+      db_postgres:
+        condition: service_healthy
+      db_mysql:
+        condition: service_healthy
     volumes:
       - .:/usr/src/app
     working_dir: /usr/src/app
