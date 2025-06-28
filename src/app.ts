@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyError } from 'fastify';
 import sensible from '@fastify/sensible';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -45,32 +45,29 @@ export function buildApp() {
     protectedApp.register(patientRoutes);
   });
 
-  app.setErrorHandler((error, request, reply) => {
+  app.setErrorHandler((error: FastifyError, request, reply) => {
     app.log.error({ error, request }, 'Request error');
 
-    // Handle specific error types or provide a generic error response
+    let statusCode = error.statusCode || 500;
+    let errorMessage = error.message || 'Something went wrong';
+    let errorName = error.name || 'Error';
+    let validation: any = undefined;
+
     if (error.validation) {
-      return reply.status(400).send({
-        statusCode: 400,
-        error: 'Bad Request',
-        message: error.message,
-        validation: error.validation,
-      });
+      statusCode = 400;
+      errorName = 'Bad Request';
+      errorMessage = 'Validation Error';
+      validation = error.validation;
+    } else if (statusCode >= 500 && process.env.NODE_ENV === 'production') {
+      // Hide specific 5xx error messages in production
+      errorMessage = 'Internal Server Error';
     }
 
-    if (error.statusCode) {
-      return reply.status(error.statusCode).send({
-        statusCode: error.statusCode,
-        error: error.name || 'Error',
-        message: error.message,
-      });
-    }
-
-    // Generic server error
-    reply.status(500).send({
-      statusCode: 500,
-      error: 'Internal Server Error',
-      message: 'Something went wrong',
+    reply.status(statusCode).send({
+      statusCode,
+      error: errorName,
+      message: errorMessage,
+      ...(validation && { validation }),
     });
   });
 
