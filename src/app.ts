@@ -5,7 +5,6 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import multiTenancy from './plugins/multiTenancy';
 import { getActiveTenants } from './config/tenants.config';
-import patientRoutes from './routes/patient.route';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -19,7 +18,7 @@ export function buildApp() {
     tenants: getActiveTenants(),
   });
 
-  app.register(patientRoutes);
+  app.register(autoload, { dir: join(__dirname, 'routes') });
 
   app.setErrorHandler((error, request, reply) => {
     app.log.error({ error, request }, 'Request error');
