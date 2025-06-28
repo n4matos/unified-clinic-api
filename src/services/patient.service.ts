@@ -1,5 +1,5 @@
 import { DbPool } from '../types/db.types';
-import { Patient } from '../types/entities.types';
+import { Patient } from '../types/patient.types';
 import { PatientRepository } from '../repositories/patient.repository';
 
 export class PatientService {

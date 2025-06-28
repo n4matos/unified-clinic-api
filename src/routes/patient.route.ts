@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify';
 import { PatientService } from '../services/patient.service';
 import { PatientRepository } from '../repositories/patient.repository';
 import { patientCreateSchema, patientUpdateSchema } from '../schemas/patient.schema';
-import { Patient } from '../types/entities.types';
+import { Patient } from '../types/patient.types';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const patientCreateJsonSchema = zodToJsonSchema(patientCreateSchema);
@@ -118,8 +118,7 @@ export default fp(async (app: FastifyInstance) => {
     async (request, reply) => {
       const db = app.getDbPool(request.clinicId!);
       const { id } = request.params as { id: string };
-      const body = request.body as Partial<Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>
-      >;
+      const body = request.body as Partial<Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>>;
       const patient = await patientService.update(db, id, body);
       return reply.send({
         patient,
