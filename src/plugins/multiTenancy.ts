@@ -84,40 +84,6 @@ export default fp(
       `Multi-tenancy initialized with ${pools.size} clinic(s): ${Array.from(pools.keys()).join(', ')}`,
     );
 
-    // Endpoint para verificar status das clínicas
-    app.get('/health/clinics', async (request, reply) => {
-      const clinicsStatus = await Promise.allSettled(
-        Array.from(pools.entries()).map(async ([clinicId, pool]) => {
-          try {
-            await pool.raw('SELECT 1');
-            return {
-              clinicId,
-              status: 'healthy',
-              type: opts.tenants.find((t) => t.id === clinicId)?.type,
-            };
-          } catch (error) {
-            return { clinicId, status: 'unhealthy', error: (error as Error).message };
-          }
-        }),
-      );
-
-      const results = clinicsStatus.map((result) =>
-        result.status === 'fulfilled' ? result.value : result.reason,
-      );
-
-      const healthyCount = results.filter((r) => r.status === 'healthy').length;
-      const overallStatus = healthyCount === results.length ? 'healthy' : 'degraded';
-
-      return reply.send({
-        status: overallStatus,
-        totalClinics: results.length,
-        healthyClinics: healthyCount,
-        clinics: results,
-      });
-    });
-
-    app.decorateRequest('db', null);
-
     app.decorate('getDbPool', (clinicId: string) => {
       const pool = pools.get(clinicId);
       if (!pool) {
@@ -125,6 +91,8 @@ export default fp(
       }
       return pool;
     });
+
+    
 
     app.addHook('onClose', async () => {
       app.log.info('Closing database pools...');

@@ -21,13 +21,11 @@ export class UserService {
 
   async validateUser(username: string, passwordInput: string) {
     const user = await this.userRepository.findByUsername(username);
-    console.log('User found:', user);
     if (!user) {
       return null; // User not found
     }
 
     const isPasswordValid = await bcrypt.compare(passwordInput, user.password_hash);
-    console.log('Is password valid:', isPasswordValid);
     if (!isPasswordValid) {
       return null; // Invalid password
     }

@@ -9,7 +9,6 @@ export class UserRepository {
   }
 
   async findByUsername(username: string): Promise<User | undefined> {
-    console.log(`Searching for user: ${username}`);
     return this.db('users').where({ username }).first<User>();
   }
 

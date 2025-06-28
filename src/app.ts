@@ -7,6 +7,7 @@ import { getActiveTenants } from './config/tenants.config';
 import authMiddleware from './middleware/auth.middleware';
 import authRoutes from './routes/auth.route';
 import patientRoutes from './routes/patient.route';
+import healthRoutes from './routes/health.route';
 import knex from 'knex';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,6 +32,7 @@ export function buildApp() {
 
   // Register public routes first
   app.register(authRoutes);
+  app.register(healthRoutes);
 
   // Register authentication middleware and then protected routes
   app.register(async (protectedApp) => {
