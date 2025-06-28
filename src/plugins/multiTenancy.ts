@@ -116,7 +116,7 @@ export default fp(
       });
     });
 
-    app.decorateRequest('db', null as unknown as DbPool);
+    app.decorateRequest('db', null);
 
     app.addHook('preHandler', (req, reply, done) => {
       const clinicId = req.headers['clinicid'] as string | undefined;

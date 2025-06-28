@@ -14,7 +14,9 @@
     "fastify-plugin": "^5.0.1",
     "knex": "^3.1.0",
     "mysql2": "^3.14.1",
-    "pg": "^8.16.2"
+    "pg": "^8.16.2",
+    "zod": "^3.25.67",
+    "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
     "@types/node": "^24.0.4",

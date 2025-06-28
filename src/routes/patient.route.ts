@@ -2,6 +2,12 @@ import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
 import { PatientService } from '../services/patient.service';
 import { PatientRepository } from '../repositories/patient.repository';
+import { patientCreateSchema, patientUpdateSchema } from '../schemas/patient.schema';
+import { Patient } from '../types/entities.types';
+import { zodToJsonSchema } from 'zod-to-json-schema';
+
+const patientCreateJsonSchema = zodToJsonSchema(patientCreateSchema);
+const patientUpdateJsonSchema = zodToJsonSchema(patientUpdateSchema);
 
 export default fp(async (app: FastifyInstance) => {
   const patientRepository = new PatientRepository();
@@ -67,17 +73,7 @@ export default fp(async (app: FastifyInstance) => {
     '/patients',
     {
       schema: {
-        body: {
-          type: 'object',
-          properties: {
-            name: { type: 'string' },
-            email: { type: 'string' },
-            phone: { type: 'string' },
-            dateOfBirth: { type: 'string' },
-            address: { type: 'string' },
-          },
-          required: ['name'],
-        },
+        body: patientCreateJsonSchema,
         response: {
           201: {
             type: 'object',
@@ -90,10 +86,7 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
-      const body = request.body as Omit<
-        import('../types/entities.types').Patient,
-        'id' | 'createdAt' | 'updatedAt'
-      >;
+      const body = request.body as Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>;
       const patient = await patientService.create(request.db, body);
       return reply.code(201).send({
         patient,
@@ -113,22 +106,12 @@ export default fp(async (app: FastifyInstance) => {
           },
           required: ['id'],
         },
-        body: {
-          type: 'object',
-          properties: {
-            name: { type: 'string' },
-            email: { type: 'string' },
-            phone: { type: 'string' },
-            dateOfBirth: { type: 'string' },
-            address: { type: 'string' },
-          },
-        },
+        body: patientUpdateJsonSchema,
       },
     },
     async (request, reply) => {
       const { id } = request.params as { id: string };
-      const body = request.body as Partial<
-        Omit<import('../types/entities.types').Patient, 'id' | 'createdAt' | 'updatedAt'>
+      const body = request.body as Partial<Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>
       >;
       const patient = await patientService.update(request.db, id, body);
       return reply.send({
