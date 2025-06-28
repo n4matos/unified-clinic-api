@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS patients (
 );
 
 -- Dados fictícios
-INSERT INTO patients (name, email, phone, date_of_birth, address)
+INSERT INTO patients (name, email, phone, birth_date, address)
 VALUES
   ('João Silva', 'joao@exemplo.com', '11999999999', '1990-01-01', 'Rua A, 123'),
   ('Maria Souza', 'maria@exemplo.com', '21988888888', '1985-05-10', 'Av. B, 456'),

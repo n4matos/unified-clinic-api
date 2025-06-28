@@ -1,4 +1,5 @@
-export interface DbPool {
-  query<T = any>(sql: string, params?: any[]): Promise<{ rows: T[] }>;
-  end(): Promise<void>;
+import { Knex } from 'knex';
+
+export interface DbPool extends Knex {
+  type: 'postgres' | 'mysql';
 }

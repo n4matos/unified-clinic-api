@@ -2,67 +2,42 @@ import { DbPool } from '../types/db.types';
 import { Patient } from '../types/entities.types';
 
 export class PatientRepository {
-  async findAll(pool: DbPool): Promise<Patient[]> {
-    const result = await pool.query('SELECT * FROM patients');
-    return result.rows;
+  async findAll(db: DbPool): Promise<Patient[]> {
+    return db('patients').select<Patient[]>();
   }
 
-  async findById(pool: DbPool, id: string): Promise<Patient | null> {
-    const result = await pool.query('SELECT * FROM patients WHERE id = $1', [id]);
-    return result.rows[0] || null;
+  async findById(db: DbPool, id: string): Promise<Patient | null> {
+    return db('patients').where({ id }).first<Patient>();
   }
 
   async create(
-    pool: DbPool,
+    db: DbPool,
     patient: Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<Patient> {
-    if ('type' in pool && pool.type === 'mysql') {
-      const result = await pool.query(
-        `INSERT INTO patients (name, email, phone, birth_date)
-         VALUES (?, ?, ?, ?)`,
-        [patient.name, patient.email, patient.phone, patient.dateOfBirth],
-      );
-      const resultAsMySQL = result.rows as any;
-      const selectResult = await pool.query('SELECT * FROM patients WHERE id = ?', [
-        resultAsMySQL.insertId,
-      ]);
-      return selectResult.rows[0];
+    if (db.type === 'mysql') {
+      const [insertId] = await db('patients').insert(patient);
+      return db('patients').where({ id: insertId }).first<Patient>();
     } else {
-      const result = await pool.query(
-        `INSERT INTO patients (name, email, phone, birth_date)
-         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [patient.name, patient.email, patient.phone, patient.dateOfBirth],
-      );
-      return result.rows[0];
+      const [createdPatient] = await db('patients').insert(patient).returning('*');
+      return createdPatient;
     }
   }
 
   async update(
-    pool: DbPool,
+    db: DbPool,
     id: string,
     patient: Partial<Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>>,
   ): Promise<Patient | null> {
-    const fields = Object.keys(patient);
-    if (fields.length === 0) return null;
-
-    if ('type' in pool && pool.type === 'mysql') {
-      const setClause = fields.map((f) => `${f} = ?`).join(', ');
-      const values = fields.map((f) => (patient as any)[f]);
-      await pool.query(`UPDATE patients SET ${setClause} WHERE id = ?`, [...values, id]);
-      const selectResult = await pool.query('SELECT * FROM patients WHERE id = ?', [id]);
-      return selectResult.rows[0] || null;
+    if (db.type === 'mysql') {
+      await db('patients').where({ id }).update(patient);
+      return db('patients').where({ id }).first<Patient>();
     } else {
-      const setClause = fields.map((f, i) => `${f} = $${i + 2}`).join(', ');
-      const values = fields.map((f) => (patient as any)[f]);
-      const result = await pool.query(
-        `UPDATE patients SET ${setClause}, updated_at = NOW() WHERE id = $1 RETURNING *`,
-        [id, ...values],
-      );
-      return result.rows[0] || null;
+      const [updatedPatient] = await db('patients').where({ id }).update(patient).returning('*');
+      return updatedPatient;
     }
   }
 
-  async delete(pool: DbPool, id: string): Promise<void> {
-    await pool.query('DELETE FROM patients WHERE id = $1', [id]);
+  async delete(db: DbPool, id: string): Promise<void> {
+    await db('patients').where({ id }).del();
   }
 }

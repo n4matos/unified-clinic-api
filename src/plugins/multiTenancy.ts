@@ -1,6 +1,5 @@
 import fp from 'fastify-plugin';
-import { Pool as PgPool } from 'pg';
-import mysql from 'mysql2/promise';
+import knex, { Knex } from 'knex';
 import { FastifyInstance } from 'fastify';
 import { DbPool } from '../types/db.types.js';
 
@@ -8,18 +7,6 @@ interface TenantConfig {
   id: string;
   conn: string;
   type: 'postgres' | 'mysql';
-}
-
-class MysqlPoolWrapper implements DbPool {
-  type: 'mysql' = 'mysql';
-  constructor(private pool: mysql.Pool) {}
-  async query<T = any>(sql: string, params?: any[]): Promise<{ rows: T[] }> {
-    const [rows] = await this.pool.query(sql, params);
-    return { rows: rows as T[] };
-  }
-  async end(): Promise<void> {
-    await this.pool.end();
-  }
 }
 
 export default fp(
@@ -30,7 +17,7 @@ export default fp(
     // Função para testar conexão
     async function testConnection(pool: DbPool, clinicId: string): Promise<boolean> {
       try {
-        await pool.query('SELECT 1');
+        await pool.raw('SELECT 1');
         return true;
       } catch (error) {
         app.log.error({ err: error }, `Connection test failed for clinic ${clinicId}`);
@@ -44,15 +31,25 @@ export default fp(
         let pool: DbPool;
 
         if (t.type === 'postgres') {
-          pool = new PgPool({
-            connectionString: t.conn,
-            max: 10, // Limite de conexões
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 5000,
-          });
+          pool = knex({
+            client: 'pg',
+            connection: t.conn,
+            pool: {
+              min: 2,
+              max: 10,
+            },
+          }) as DbPool;
+          pool.type = 'postgres';
         } else if (t.type === 'mysql') {
-          const mysqlPool = mysql.createPool(t.conn);
-          pool = new MysqlPoolWrapper(mysqlPool);
+          pool = knex({
+            client: 'mysql2',
+            connection: t.conn,
+            pool: {
+              min: 2,
+              max: 10,
+            },
+          }) as DbPool;
+          pool.type = 'mysql';
         } else {
           throw new Error(`Unknown DB type for clinic ${t.id}`);
         }
@@ -61,7 +58,7 @@ export default fp(
         const isConnected = await testConnection(pool, t.id);
         if (!isConnected) {
           initErrors.push(`Failed to connect to database for clinic ${t.id}`);
-          await pool.end();
+          await pool.destroy(); // Use destroy for Knex
           continue;
         }
 
@@ -92,7 +89,7 @@ export default fp(
       const clinicsStatus = await Promise.allSettled(
         Array.from(pools.entries()).map(async ([clinicId, pool]) => {
           try {
-            await pool.query('SELECT 1');
+            await pool.raw('SELECT 1');
             return {
               clinicId,
               status: 'healthy',
@@ -161,7 +158,7 @@ export default fp(
       app.log.info('Closing database pools...');
       const closePromises = Array.from(pools.entries()).map(async ([clinicId, pool]) => {
         try {
-          await pool.end();
+          await pool.destroy(); // Use destroy for Knex
           app.log.info(`✅ Pool closed for clinic ${clinicId}`);
         } catch (error) {
           app.log.error(`❌ Error closing pool for clinic ${clinicId}:`, error);
