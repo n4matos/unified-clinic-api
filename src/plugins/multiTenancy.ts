@@ -118,40 +118,12 @@ export default fp(
 
     app.decorateRequest('db', null);
 
-    app.addHook('preHandler', (req, reply, done) => {
-      const clinicId = req.headers['clinicid'] as string | undefined;
-
-      // Validação mais robusta
-      if (!clinicId) {
-        app.log.warn('Missing clinicId header', {
-          url: req.url,
-          method: req.method,
-          ip: req.ip,
-        });
-        return reply.code(400).send({
-          error: 'Header clinicId é obrigatório',
-          code: 'MISSING_CLINIC_ID',
-        });
-      }
-
+    app.decorate('getDbPool', (clinicId: string) => {
       const pool = pools.get(clinicId);
       if (!pool) {
-        app.log.error('Invalid clinic ID', {
-          clinicId,
-          availableClinics: Array.from(pools.keys()),
-          url: req.url,
-          method: req.method,
-        });
-        return reply.code(404).send({
-          error: `Clínica '${clinicId}' não encontrada`,
-          code: 'CLINIC_NOT_FOUND',
-          availableClinics: Array.from(pools.keys()),
-        });
+        throw app.httpErrors.notFound(`Clínica '${clinicId}' não encontrada`);
       }
-
-      (req as any).db = pool;
-      app.log.debug('Database pool assigned', { clinicId, url: req.url });
-      done();
+      return pool;
     });
 
     app.addHook('onClose', async () => {

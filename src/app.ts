@@ -1,24 +1,47 @@
 import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
-import autoload from '@fastify/autoload';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import multiTenancy from './plugins/multiTenancy';
 import { getActiveTenants } from './config/tenants.config';
+import authMiddleware from './middleware/auth.middleware';
+import authRoutes from './routes/auth.route';
+import patientRoutes from './routes/patient.route';
+import knex from 'knex';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export function buildApp() {
   const app = Fastify({ logger: true });
 
-  app.register(sensible);
-
-  // Usar configuração centralizada de tenants
-  app.register(multiTenancy, {
-    tenants: getActiveTenants(),
+  // Initialize user database connection
+  const userDb = knex({
+    client: 'pg',
+    connection: process.env.USERS_DATABASE_URL || 'postgres://user:password@localhost:5432/unified_clinic_users',
+    pool: {
+      min: 2,
+      max: 10,
+    },
   });
 
-  app.register(autoload, { dir: join(__dirname, 'routes') });
+  // Decorate app with userDb
+  app.decorate('userDb', userDb);
+
+  app.register(sensible);
+
+  // Register public routes first
+  app.register(authRoutes);
+
+  // Register authentication middleware and then protected routes
+  app.register(async (protectedApp) => {
+    protectedApp.register(authMiddleware);
+
+    protectedApp.register(multiTenancy, {
+      tenants: getActiveTenants(),
+    });
+
+    protectedApp.register(patientRoutes);
+  });
 
   app.setErrorHandler((error, request, reply) => {
     app.log.error({ error, request }, 'Request error');
@@ -47,6 +70,12 @@ export function buildApp() {
       error: 'Internal Server Error',
       message: 'Something went wrong',
     });
+  });
+
+  // Close userDb connection on app close
+  app.addHook('onClose', async () => {
+    await userDb.destroy();
+    app.log.info('User database connection closed.');
   });
 
   return app;

@@ -13,6 +13,9 @@ export default fp(async (app: FastifyInstance) => {
   const patientRepository = new PatientRepository();
   const patientService = new PatientService(patientRepository);
 
+  // Apply authentication middleware to all patient routes
+  app.addHook('preHandler', app.authenticate);
+
   app.get(
     '/patients',
     {
@@ -29,7 +32,8 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
-      const patients = await patientService.getAll(request.db);
+      const db = app.getDbPool(request.clinicId!);
+      const patients = await patientService.getAll(db);
       return reply.send({
         patients,
         message: 'Pacientes listados com sucesso',
@@ -60,8 +64,9 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
+      const db = app.getDbPool(request.clinicId!);
       const { id } = request.params as { id: string };
-      const patient = await patientService.getById(request.db, id);
+      const patient = await patientService.getById(db, id);
       return reply.send({
         patient,
         message: patient ? 'Paciente encontrado' : 'Paciente não encontrado',
@@ -86,8 +91,9 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
+      const db = app.getDbPool(request.clinicId!);
       const body = request.body as Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>;
-      const patient = await patientService.create(request.db, body);
+      const patient = await patientService.create(db, body);
       return reply.code(201).send({
         patient,
         message: 'Paciente criado com sucesso',
@@ -110,10 +116,11 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
+      const db = app.getDbPool(request.clinicId!);
       const { id } = request.params as { id: string };
       const body = request.body as Partial<Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>
       >;
-      const patient = await patientService.update(request.db, id, body);
+      const patient = await patientService.update(db, id, body);
       return reply.send({
         patient,
         message: patient ? 'Paciente atualizado com sucesso' : 'Paciente não encontrado',
@@ -140,8 +147,9 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
+      const db = app.getDbPool(request.clinicId!);
       const { id } = request.params as { id: string };
-      await patientService.delete(request.db, id);
+      await patientService.delete(db, id);
       return reply.code(204).send();
     },
   );

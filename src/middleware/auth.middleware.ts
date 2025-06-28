@@ -1,46 +1,50 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { JWTPayload } from '../types/index.js';
+import { FastifyRequest, FastifyReply, HookHandlerDoneFunction } from 'fastify';
+import fp from 'fastify-plugin';
+import jwt from 'jsonwebtoken';
+import { getTenantConfig } from '../config/tenants.config';
 
-// Middleware para autenticação JWT (placeholder)
-export async function authMiddleware(request: FastifyRequest, reply: FastifyReply) {
-  const authHeader = request.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return reply.code(401).send({ error: 'Token de autorização necessário' });
+declare module 'fastify' {
+  interface FastifyRequest {
+    clinicId?: string;
   }
-
-  const token = authHeader.substring(7); // Remove "Bearer "
-
-  try {
-    // TODO: Implementar verificação real do JWT
-    // Por enquanto, vamos simular um payload válido
-    const mockPayload: JWTPayload = {
-      clinicId: 'clinic-1',
-      userId: 'user-123',
-      role: 'staff',
-    };
-
-    // Adiciona os dados do JWT à request para uso posterior
-    (request as any).user = mockPayload;
-  } catch (error) {
-    return reply.code(401).send({ error: 'Token inválido' });
+  interface FastifyInstance {
+    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 
-// Helper para extrair clinic ID do JWT
-export function getClinicIdFromRequest(request: FastifyRequest): string {
-  const user = (request as any).user as JWTPayload;
-  return user?.clinicId || '';
-}
+export default fp(async (app) => {
+  app.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
+    const authHeader = request.headers.authorization;
 
-// Helper para verificar se usuário tem permissão
-export function hasPermission(request: FastifyRequest, requiredRole?: string): boolean {
-  const user = (request as any).user as JWTPayload;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw app.httpErrors.unauthorized('Authorization token is missing or invalid');
+    }
 
-  if (!user) return false;
+    const token = authHeader.split(' ')[1];
+    const secret = process.env.JWT_SECRET;
 
-  if (!requiredRole) return true;
+    if (!secret) {
+      app.log.error('JWT_SECRET is not defined');
+      throw app.httpErrors.internalServerError('Server configuration error');
+    }
 
-  // Implementar lógica de permissões conforme necessário
-  return user.role === requiredRole || user.role === 'admin';
-}
+    try {
+      const decoded = jwt.verify(token, secret) as { clinicId: string };
+      const clinicId = decoded.clinicId;
+
+      const tenantConfig = getTenantConfig(clinicId);
+
+      if (!tenantConfig) {
+        throw app.httpErrors.forbidden('Invalid clinic ID in token');
+      }
+
+      request.clinicId = clinicId;
+    } catch (error) {
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw app.httpErrors.unauthorized(`Invalid token: ${error.message}`);
+      }
+      app.log.error({ error }, 'JWT verification failed');
+      throw app.httpErrors.internalServerError('Internal server error');
+    }
+  });
+});

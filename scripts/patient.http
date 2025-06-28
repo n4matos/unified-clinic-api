@@ -1,80 +1,84 @@
-@patientId = 1
+@jwtToken = 
 
-### Listar pacientes da Clínica 1 (PostgreSQL)
-GET http://localhost:3000/patients
-Accept: application/json
-clinicId: 1
-
-### Criar paciente na Clínica 1 (PostgreSQL)
-POST http://localhost:3000/patients
+### Register User for Clinic 1
+POST http://localhost:3000/auth/register
 Content-Type: application/json
-clinicId: 1
 
 {
-  "name": "João Silva",
-  "email": "joao@exemplo.com",
+  "username": "user1_clinic1",
+  "password": "password",
+  "clinicId": "1"
+}
+
+### Register User for Clinic 2
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "username": "user2_clinic2",
+  "password": "password",
+  "clinicId": "2"
+}
+
+### Login for Clinic 1 User
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "user1_clinic1",
+  "password": "password"
+}
+
+### Login for Clinic 2 User
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "user2_clinic2",
+  "password": "password"
+}
+
+### List patients from Clinic 1 (PostgreSQL) with JWT
+GET http://localhost:3000/patients
+Accept: application/json
+Authorization: Bearer {{jwtToken}}
+
+### Create patient in Clinic 1 (PostgreSQL) with JWT
+POST http://localhost:3000/patients
+Content-Type: application/json
+Authorization: Bearer {{jwtToken}}
+
+{
+  "name": "João Silva JWT",
+  "email": "joao.jwt@exemplo.com",
   "phone": "11777777777",
   "birth_date": "1985-07-20"
 }
 
-### Listar pacientes da Clínica 2 (MySQL)
+### List patients from Clinic 2 (MySQL) with JWT
 GET http://localhost:3000/patients
 Accept: application/json
-clinicId: 2
+Authorization: Bearer {{jwtToken}}
 
-### Criar paciente na Clínica 2 (MySQL)
+### Create patient in Clinic 2 (MySQL) with JWT
 POST http://localhost:3000/patients
 Content-Type: application/json
-clinicId: 2
+Authorization: Bearer {{jwtToken}}
 
 {
-  "name": "Maria Souza",
-  "email": "maria@exemplo.com",
+  "name": "Maria Souza JWT",
+  "email": "maria.jwt@exemplo.com",
   "phone": "21777777777",
   "birth_date": "1990-10-15"
 }
-  "name": "Ana Teste",
-  "email": "ana@exemplo.com",
-  "phone": "11988887777",
-  "dateOfBirth": "1992-03-15",
-  "address": "Rua Teste, 123"
-}
 
-### Atualizar paciente
-PUT http://localhost:3000/patients/{{patientId}}
-Content-Type: application/json
-x-clinic-id: {{clinicId}}
-
-{
-  "name": "Ana Teste Atualizada",
-  "email": "ana.atualizada@exemplo.com",
-  "phone": "11999998888",
-  "dateOfBirth": "1992-03-15",
-  "address": "Rua Teste Atualizada, 456"
-}
-
-### Remover paciente
-DELETE http://localhost:3000/patients/{{patientId}}
-x-clinic-id: {{clinicId}}
-
-###############################################
-# Exemplos para diferentes clínicas
-###############################################
-
-### Listar pacientes da Clínica 2
-GET http://localhost:3000/patients
-Accept: application/json
-x-clinic-id: clinic2
-
-### Criar paciente na Clínica 2
+### Test Zod validation (invalid request)
 POST http://localhost:3000/patients
 Content-Type: application/json
-x-clinic-id: clinic-2
+Authorization: Bearer {{jwtToken}}
 
 {
-  "name": "João Silva",
-  "email": "joao@exemplo.com",
-  "phone": "11777777777",
-  "dateOfBirth": "1985-07-20",
-  "address": "Av. Principal, 789"
+  "name": "",
+  "email": "invalid-email",
+  "phone": "123"
 }

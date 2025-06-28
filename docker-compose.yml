@@ -1,4 +1,20 @@
 services:
+  db_users:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: unified_clinic_users
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d unified_clinic_users"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./data/users:/var/lib/postgresql/data
+      - ./scripts/init-users.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
   db_postgres:
     image: postgres:16
     restart: always
@@ -37,9 +53,13 @@ services:
     command: npm run dev
     environment:
       DATABASE_URL: postgres://user:password@db_postgres:5432/unified_clinic
+      JWT_SECRET: your_super_secret_jwt_key_here
+      USERS_DATABASE_URL: postgres://user:password@db_users:5432/unified_clinic_users
     ports:
       - '3000:3000'
     depends_on:
+      db_users:
+        condition: service_healthy
       db_postgres:
         condition: service_healthy
       db_mysql:
