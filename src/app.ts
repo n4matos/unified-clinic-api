@@ -12,7 +12,7 @@ import knex from 'knex';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export function buildApp() {
+export async function buildApp() {
   const app = Fastify({ logger: true });
 
   // Initialize user database connection
@@ -30,19 +30,17 @@ export function buildApp() {
 
   app.register(sensible);
 
+  await app.register(multiTenancy, {
+    tenants: getActiveTenants(),
+  });
+
   // Register public routes first
   app.register(authRoutes);
   app.register(healthRoutes);
 
-  // Register authentication middleware and then protected routes
-  app.register(async (protectedApp) => {
-    protectedApp.register(authMiddleware);
-
-    protectedApp.register(multiTenancy, {
-      tenants: getActiveTenants(),
-    });
-
-    protectedApp.register(patientRoutes);
+  app.register(async (app) => {
+    app.register(authMiddleware);
+    app.register(patientRoutes);
   });
 
   app.setErrorHandler((error: FastifyError, request, reply) => {

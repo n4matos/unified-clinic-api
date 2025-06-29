@@ -4,7 +4,7 @@ import { FastifyInstance } from 'fastify';
 async function start() {
   let app: FastifyInstance | undefined;
   try {
-    app = buildApp();
+    app = await buildApp();
     const PORT = process.env.PORT ?? 3000;
 
     // Graceful shutdown

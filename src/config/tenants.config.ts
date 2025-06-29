@@ -2,7 +2,7 @@ interface TenantConfig {
   id: string;
   name: string;
   type: 'postgres' | 'mysql';
-  conn: string;
+  connEnv: string;
   active: boolean;
 }
 
@@ -11,14 +11,14 @@ export const TENANT_CONFIGS: TenantConfig[] = [
     id: '1',
     name: 'Clínica São Paulo',
     type: 'postgres',
-    conn: 'postgres://user:password@db_postgres:5432/unified_clinic',
+    connEnv: 'TENANT_1_PG_CONN',
     active: true,
   },
   {
     id: '2',
     name: 'Clínica Rio de Janeiro',
     type: 'mysql',
-    conn: 'mysql://user:password@db_mysql:3306/unified_clinic_mysql',
+    connEnv: 'TENANT_2_MYSQL_CONN',
     active: true,
   },
 ];

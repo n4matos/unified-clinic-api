@@ -1,5 +1,6 @@
 import 'fastify';
-import { DbPool } from './db.types';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { Knex } from 'knex';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -8,5 +9,6 @@ declare module 'fastify' {
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     getDbPool: (clinicId: string) => DbPool;
+    failedTenantInitializations: string[];
   }
 }

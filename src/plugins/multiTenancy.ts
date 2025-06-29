@@ -5,7 +5,7 @@ import { DbPool } from '../types/db.types.js';
 
 interface TenantConfig {
   id: string;
-  conn: string;
+  connEnv: string;
   type: 'postgres' | 'mysql';
 }
 
@@ -15,13 +15,14 @@ export default fp(
     const initErrors: string[] = [];
 
     // Função para testar conexão
-    async function testConnection(pool: DbPool, clinicId: string): Promise<boolean> {
+    async function testConnection(pool: DbPool, clinicId: string): Promise<string | null> {
       try {
         await pool.raw('SELECT 1');
-        return true;
-      } catch (error) {
-        app.log.error({ err: error }, `Connection test failed for clinic ${clinicId}`);
-        return false;
+        return null; // No error
+      } catch (error: any) {
+        const errorMessage = `Connection test failed for clinic ${clinicId}: ${error.message}`;
+        app.log.error({ err: error }, errorMessage);
+        return errorMessage;
       }
     }
 
@@ -29,11 +30,16 @@ export default fp(
     for (const t of opts.tenants) {
       try {
         let pool: DbPool;
+        const connString = process.env[t.connEnv];
+
+        if (!connString) {
+          throw new Error(`Connection string not found for environment variable ${t.connEnv}`);
+        }
 
         if (t.type === 'postgres') {
           pool = knex({
             client: 'pg',
-            connection: t.conn,
+            connection: connString,
             pool: {
               min: 2,
               max: 10,
@@ -43,7 +49,7 @@ export default fp(
         } else if (t.type === 'mysql') {
           pool = knex({
             client: 'mysql2',
-            connection: t.conn,
+            connection: connString,
             pool: {
               min: 2,
               max: 10,
@@ -55,9 +61,9 @@ export default fp(
         }
 
         // Testar conexão
-        const isConnected = await testConnection(pool, t.id);
-        if (!isConnected) {
-          initErrors.push(`Failed to connect to database for clinic ${t.id}`);
+        const connectionError = await testConnection(pool, t.id);
+        if (connectionError) {
+          initErrors.push(connectionError);
           await pool.destroy(); // Use destroy for Knex
           continue;
         }
@@ -71,11 +77,6 @@ export default fp(
       }
     }
 
-    // Verificar se pelo menos uma clínica foi inicializada
-    if (pools.size === 0) {
-      throw new Error(`No database pools could be initialized. Errors: ${initErrors.join('; ')}`);
-    }
-
     if (initErrors.length > 0) {
       app.log.warn(`Some clinics failed to initialize: ${initErrors.join('; ')}`);
     }
@@ -83,6 +84,8 @@ export default fp(
     app.log.info(
       `Multi-tenancy initialized with ${pools.size} clinic(s): ${Array.from(pools.keys()).join(', ')}`,
     );
+
+    app.decorate('failedTenantInitializations', initErrors);
 
     app.decorate('getDbPool', (clinicId: string) => {
       const pool = pools.get(clinicId);
@@ -111,3 +114,5 @@ export default fp(
   },
   { name: 'multiTenancy' },
 );
+
+

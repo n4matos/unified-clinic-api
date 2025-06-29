@@ -55,6 +55,8 @@ services:
       DATABASE_URL: postgres://user:password@db_postgres:5432/unified_clinic
       JWT_SECRET: your_super_secret_jwt_key_here
       USERS_DATABASE_URL: postgres://user:password@db_users:5432/unified_clinic_users
+      TENANT_1_PG_CONN: postgres://user:password@db_postgres:5432/unified_clinic
+      TENANT_2_MYSQL_CONN: mysql://user:password@db_mysql:3306/unified_clinic_mysql
     ports:
       - '3000:3000'
     depends_on:
