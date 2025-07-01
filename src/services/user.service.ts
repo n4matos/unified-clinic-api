@@ -1,3 +1,4 @@
+import { HttpError } from '../errors/http.error';
 import bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/user.repository';
 import { UserCreate } from '../types/user.types';
@@ -21,13 +22,13 @@ export class UserService {
 
   async validateUser(username: string, passwordInput: string) {
     const user = await this.userRepository.findByUsername(username);
-    if (!user) {
-      return null; // User not found
+        if (!user) {
+      throw new HttpError(401, 'Invalid username or password');
     }
 
     const isPasswordValid = await bcrypt.compare(passwordInput, user.password_hash);
-    if (!isPasswordValid) {
-      return null; // Invalid password
+        if (!isPasswordValid) {
+      throw new HttpError(401, 'Invalid username or password');
     }
 
     return user; // User authenticated

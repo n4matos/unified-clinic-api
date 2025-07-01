@@ -1,3 +1,4 @@
+import { HttpError } from '../errors/http.error';
 import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
 import { PatientService } from '../services/patient.service';
@@ -18,26 +19,11 @@ export default fp(async (app: FastifyInstance) => {
 
   app.get(
     '/patients',
-    {
-      schema: {
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              patients: { type: 'array' },
-              message: { type: 'string' },
-            },
-          },
-        },
-      },
-    },
+    
     async (request, reply) => {
       const db = app.getDbPool(request.clinicId!);
       const patients = await patientService.getAll(db);
-      return reply.send({
-        patients,
-        message: 'Pacientes listados com sucesso',
-      });
+            return reply.send(patients);
     },
   );
 
@@ -52,25 +38,16 @@ export default fp(async (app: FastifyInstance) => {
           },
           required: ['id'],
         },
-        response: {
-          200: {
-            type: 'object',
-            properties: {
-              patient: { type: ['object', 'null'] },
-              message: { type: 'string' },
-            },
-          },
-        },
       },
     },
     async (request, reply) => {
       const db = app.getDbPool(request.clinicId!);
       const { id } = request.params as { id: string };
       const patient = await patientService.getById(db, id);
-      return reply.send({
-        patient,
-        message: patient ? 'Paciente encontrado' : 'Paciente não encontrado',
-      });
+            if (!patient) {
+        throw new HttpError(404, 'Patient not found');
+      }
+      return reply.send(patient);
     },
   );
 
@@ -79,25 +56,13 @@ export default fp(async (app: FastifyInstance) => {
     {
       schema: {
         body: patientCreateJsonSchema,
-        response: {
-          201: {
-            type: 'object',
-            properties: {
-              patient: { type: 'object' },
-              message: { type: 'string' },
-            },
-          },
-        },
       },
     },
     async (request, reply) => {
       const db = app.getDbPool(request.clinicId!);
       const body = request.body as Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>;
-      const patient = await patientService.create(db, body);
-      return reply.code(201).send({
-        patient,
-        message: 'Paciente criado com sucesso',
-      });
+            const patient = await patientService.create(db, body);
+      return reply.code(201).send(patient);
     },
   );
 
@@ -119,11 +84,11 @@ export default fp(async (app: FastifyInstance) => {
       const db = app.getDbPool(request.clinicId!);
       const { id } = request.params as { id: string };
       const body = request.body as Partial<Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>>;
-      const patient = await patientService.update(db, id, body);
-      return reply.send({
-        patient,
-        message: patient ? 'Paciente atualizado com sucesso' : 'Paciente não encontrado',
-      });
+            const patient = await patientService.update(db, id, body);
+      if (!patient) {
+        throw new HttpError(404, 'Patient not found');
+      }
+      return reply.send(patient);
     },
   );
 
@@ -137,11 +102,6 @@ export default fp(async (app: FastifyInstance) => {
             id: { type: 'string' },
           },
           required: ['id'],
-        },
-        response: {
-          204: {
-            type: 'null',
-          },
         },
       },
     },

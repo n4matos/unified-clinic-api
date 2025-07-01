@@ -1,4 +1,4 @@
-import Fastify, { FastifyError } from 'fastify';
+import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +7,7 @@ import { getActiveTenants } from './config/tenants.config';
 import authMiddleware from './middleware/auth.middleware';
 import authRoutes from './routes/auth.route';
 import patientRoutes from './routes/patient.route';
+import errorHandler from './plugins/errorHandler';
 import healthRoutes from './routes/health.route';
 import knex from 'knex';
 
@@ -28,6 +29,7 @@ export async function buildApp() {
   // Decorate app with userDb
   app.decorate('userDb', userDb);
 
+  app.register(errorHandler);
   app.register(sensible);
 
   await app.register(multiTenancy, {
@@ -43,31 +45,7 @@ export async function buildApp() {
     app.register(patientRoutes);
   });
 
-  app.setErrorHandler((error: FastifyError, request, reply) => {
-    app.log.error({ error, request }, 'Request error');
-
-    let statusCode = error.statusCode || 500;
-    let errorMessage = error.message || 'Something went wrong';
-    let errorName = error.name || 'Error';
-    let validation: any = undefined;
-
-    if (error.validation) {
-      statusCode = 400;
-      errorName = 'Bad Request';
-      errorMessage = 'Validation Error';
-      validation = error.validation;
-    } else if (statusCode >= 500 && process.env.NODE_ENV === 'production') {
-      // Hide specific 5xx error messages in production
-      errorMessage = 'Internal Server Error';
-    }
-
-    reply.status(statusCode).send({
-      statusCode,
-      error: errorName,
-      message: errorMessage,
-      ...(validation && { validation }),
-    });
-  });
+    
 
   // Close userDb connection on app close
   app.addHook('onClose', async () => {
