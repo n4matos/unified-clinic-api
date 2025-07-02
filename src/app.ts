@@ -1,10 +1,10 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import sensible from '@fastify/sensible';
 import { randomUUID } from 'crypto';
-import knex from 'knex';
 
 import multiTenancy from './plugins/multiTenancy';
 import errorHandler from './plugins/errorHandler';
+import userDatabase from './plugins/userDatabase';
 
 import { getActiveTenants } from './config/tenants.config';
 import authMiddleware from './middleware/auth.middleware';
@@ -33,15 +33,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.register(errorHandler);
   app.register(sensible);
 
-  /* ---------- DB de usuários ---------- */
-  const userDb = knex({
-    client: 'pg',
-    connection:
-      process.env.USERS_DATABASE_URL ??
-      'postgres://user:password@localhost:5432/unified_clinic_users',
-    pool: { min: 2, max: 10 },
-  });
-  app.decorate('userDb', userDb);
+  /* ---------- banco de usuários ---------- */
+  await app.register(userDatabase);
 
   /* ---------- multi-tenancy ---------- */
   await app.register(multiTenancy, { tenants: getActiveTenants() });
@@ -63,12 +56,6 @@ export async function buildApp(): Promise<FastifyInstance> {
       'request completed',
     );
     done();
-  });
-
-  /* ---------- shutdown ---------- */
-  app.addHook('onClose', async () => {
-    await userDb.destroy();
-    app.log.info('User DB closed');
   });
 
   return app;

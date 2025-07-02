@@ -12,5 +12,9 @@ declare module 'fastify' {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     getDbPool: (clinicId: string) => DbPool;
     failedTenantInitializations: string[];
+
+    // Métodos utilitários para o banco de usuários
+    getUserDb(): Knex;
+    isUserDbHealthy(): Promise<boolean>;
   }
 }
