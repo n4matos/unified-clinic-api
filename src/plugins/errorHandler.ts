@@ -2,6 +2,14 @@ import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { HttpError } from '../errors/http.error';
 
+interface ValidationError {
+  instancePath: string;
+  schemaPath: string;
+  keyword: string;
+  params: Record<string, unknown>;
+  message?: string;
+}
+
 async function errorHandlerPlugin(app: FastifyInstance) {
   app.setErrorHandler((error, request, reply) => {
     app.log.error(error);
@@ -9,7 +17,7 @@ async function errorHandlerPlugin(app: FastifyInstance) {
     let statusCode = 500;
     let message = 'Internal Server Error';
     let errorName = 'Internal Server Error';
-    let validationErrors: any = undefined;
+    let validationErrors: ValidationError[] | undefined = undefined;
 
     if (error instanceof HttpError) {
       statusCode = error.statusCode;

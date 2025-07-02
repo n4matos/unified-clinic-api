@@ -1,4 +1,4 @@
-import { FastifyRequest, FastifyReply, HookHandlerDoneFunction } from 'fastify';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import jwt from 'jsonwebtoken';
 import { getTenantConfig } from '../config/tenants.config';
@@ -13,7 +13,7 @@ declare module 'fastify' {
 }
 
 export default fp(async (app) => {
-  app.decorate('authenticate', async (request: FastifyRequest, reply: FastifyReply) => {
+  app.decorate('authenticate', async (request: FastifyRequest, _reply: FastifyReply) => {
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
