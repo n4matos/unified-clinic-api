@@ -1,5 +1,9 @@
 # Unified Clinic API
 
+![CI](https://github.com/username/unified-clinic-api/workflows/CI%20Pipeline/badge.svg)
+![Node.js](https://img.shields.io/badge/node.js-18.x%20%7C%2020.x-green)
+![TypeScript](https://img.shields.io/badge/typescript-5.5.0-blue)
+
 API em Fastify para unificar o acesso de múltiplas clínicas. Cada clínica possui sua própria base de dados (PostgreSQL ou MySQL), e a seleção do banco é feita através de um JWT (JSON Web Token) obtido após a autenticação do usuário.
 
 ## Arquitetura
@@ -8,31 +12,31 @@ O projeto utiliza uma abordagem **multi-pool monolítica**: todas as conexões d
 
 ### Tecnologias Principais
 
-*   **Fastify**: Framework web rápido e de baixo overhead para Node.js.
-*   **TypeScript**: Linguagem de programação que adiciona tipagem estática ao JavaScript, melhorando a manutenibilidade e a detecção de erros.
-*   **Knex.js**: Um construtor de queries SQL flexível e programático que suporta múltiplos bancos de dados (PostgreSQL, MySQL, etc.), abstraindo as diferenças de sintaxe SQL e prevenindo SQL Injection.
-*   **Zod**: Biblioteca de validação de schemas para garantir que os dados de entrada da API estejam corretos e tipados.
-*   **bcryptjs**: Biblioteca para hash de senhas, garantindo que as credenciais dos usuários sejam armazenadas de forma segura.
-*   **jsonwebtoken**: Biblioteca para geração e verificação de JSON Web Tokens (JWTs), utilizada para autenticação e autorização.
-*   **Docker Compose**: Ferramenta para definir e executar aplicações Docker multi-container, facilitando o setup do ambiente de desenvolvimento local com PostgreSQL, MySQL e a API.
+- **Fastify**: Framework web rápido e de baixo overhead para Node.js.
+- **TypeScript**: Linguagem de programação que adiciona tipagem estática ao JavaScript, melhorando a manutenibilidade e a detecção de erros.
+- **Knex.js**: Um construtor de queries SQL flexível e programático que suporta múltiplos bancos de dados (PostgreSQL, MySQL, etc.), abstraindo as diferenças de sintaxe SQL e prevenindo SQL Injection.
+- **Zod**: Biblioteca de validação de schemas para garantir que os dados de entrada da API estejam corretos e tipados.
+- **bcryptjs**: Biblioteca para hash de senhas, garantindo que as credenciais dos usuários sejam armazenadas de forma segura.
+- **jsonwebtoken**: Biblioteca para geração e verificação de JSON Web Tokens (JWTs), utilizada para autenticação e autorização.
+- **Docker Compose**: Ferramenta para definir e executar aplicações Docker multi-container, facilitando o setup do ambiente de desenvolvimento local com PostgreSQL, MySQL e a API.
 
 ### Estrutura do Projeto
 
-*   `src/plugins/multiTenancy.ts`: Plugin Fastify responsável por inicializar e gerenciar os pools de conexão Knex.js para cada clínica ativa.
-*   `src/middleware/auth.middleware.ts`: Middleware Fastify que verifica o JWT em requisições protegidas, extrai o `clinicId` do token e o disponibiliza em `request.clinicId`.
-*   `src/routes/auth.route.ts`: Contém as rotas para registro (`/auth/register`) e login (`/auth/login`) de usuários, responsáveis por emitir JWTs.
-*   `src/routes/`: Contém as definições de rotas da API. Os handlers das rotas obtêm o pool de conexão através de `app.getDbPool(request.clinicId!)` e o passam para a camada de serviço.
-*   `src/services/`: Camada de lógica de negócios, que orquestra as operações e interage com os repositórios.
-*   `src/repositories/`: Camada de acesso a dados, que utiliza Knex.js para construir e executar queries no banco de dados.
-*   `src/repositories/user.repository.ts`: Repositório específico para interagir com o banco de dados de usuários da API.
-*   `src/services/user.service.ts`: Serviço para lógica de negócios relacionada a usuários, incluindo hash de senhas e validação.
-*   `src/schemas/`: Contém os schemas de validação de entrada (Zod) para as rotas da API.
-*   `src/types/`: Definições de tipos TypeScript para entidades e interfaces customizadas.
-*   `src/types/user.types.ts`: Definições de tipos para a entidade de usuário da API.
-*   `docker-compose.yml`: Define os serviços Docker para PostgreSQL (para clínicas e usuários), MySQL (para clínicas) e a API, incluindo configurações de rede, volumes e health checks.
-*   `scripts/init.sql`: Script de inicialização para o banco de dados PostgreSQL das clínicas.
-*   `scripts/init-mysql.sql`: Script de inicialização para o banco de dados MySQL das clínicas.
-*   `scripts/init-users.sql`: Script de inicialização para o banco de dados de usuários da API.
+- `src/plugins/multiTenancy.ts`: Plugin Fastify responsável por inicializar e gerenciar os pools de conexão Knex.js para cada clínica ativa.
+- `src/middleware/auth.middleware.ts`: Middleware Fastify que verifica o JWT em requisições protegidas, extrai o `clinicId` do token e o disponibiliza em `request.clinicId`.
+- `src/routes/auth.route.ts`: Contém as rotas para registro (`/auth/register`) e login (`/auth/login`) de usuários, responsáveis por emitir JWTs.
+- `src/routes/`: Contém as definições de rotas da API. Os handlers das rotas obtêm o pool de conexão através de `app.getDbPool(request.clinicId!)` e o passam para a camada de serviço.
+- `src/services/`: Camada de lógica de negócios, que orquestra as operações e interage com os repositórios.
+- `src/repositories/`: Camada de acesso a dados, que utiliza Knex.js para construir e executar queries no banco de dados.
+- `src/repositories/user.repository.ts`: Repositório específico para interagir com o banco de dados de usuários da API.
+- `src/services/user.service.ts`: Serviço para lógica de negócios relacionada a usuários, incluindo hash de senhas e validação.
+- `src/schemas/`: Contém os schemas de validação de entrada (Zod) para as rotas da API.
+- `src/types/`: Definições de tipos TypeScript para entidades e interfaces customizadas.
+- `src/types/user.types.ts`: Definições de tipos para a entidade de usuário da API.
+- `docker-compose.yml`: Define os serviços Docker para PostgreSQL (para clínicas e usuários), MySQL (para clínicas) e a API, incluindo configurações de rede, volumes e health checks.
+- `scripts/init.sql`: Script de inicialização para o banco de dados PostgreSQL das clínicas.
+- `scripts/init-mysql.sql`: Script de inicialização para o banco de dados MySQL das clínicas.
+- `scripts/init-users.sql`: Script de inicialização para o banco de dados de usuários da API.
 
 ## Configuração e Inicialização
 
@@ -42,20 +46,22 @@ Certifique-se de ter o [Docker](https://docs.docker.com/get-docker/) e o [Docker
 
 ### Variáveis de Ambiente
 
-*   `JWT_SECRET`: Uma string secreta forte usada para assinar e verificar os JWTs. Definida no `docker-compose.yml`.
-*   `USERS_DATABASE_URL`: String de conexão para o banco de dados de usuários da API. Definida no `docker-compose.yml`.
+- `JWT_SECRET`: Uma string secreta forte usada para assinar e verificar os JWTs. Definida no `docker-compose.yml`.
+- `USERS_DATABASE_URL`: String de conexão para o banco de dados de usuários da API. Definida no `docker-compose.yml`.
 
 ### Iniciando a Aplicação
 
 1.  **Construa e inicie os containers Docker**:
+
     ```bash
     docker compose up --build -d --force-recreate
     ```
+
     Este comando irá:
-    *   Construir a imagem Docker da API.
-    *   Iniciar os containers do PostgreSQL para usuários (`db_users`), PostgreSQL para clínicas (`db_postgres`), MySQL para clínicas (`db_mysql`) e a API (`api`).
-    *   Os bancos de dados serão inicializados com os schemas e dados definidos em seus respectivos scripts `init-*.sql`.
-    *   A API aguardará até que todos os serviços de banco de dados estejam saudáveis antes de iniciar.
+    - Construir a imagem Docker da API.
+    - Iniciar os containers do PostgreSQL para usuários (`db_users`), PostgreSQL para clínicas (`db_postgres`), MySQL para clínicas (`db_mysql`) e a API (`api`).
+    - Os bancos de dados serão inicializados com os schemas e dados definidos em seus respectivos scripts `init-*.sql`.
+    - A API aguardará até que todos os serviços de banco de dados estejam saudáveis antes de iniciar.
 
 2.  **Verifique o status dos containers**:
     ```bash
@@ -96,7 +102,8 @@ curl -X POST http://localhost:3000/auth/register \
     "clinicId": "1"
   }'
 ```
-*   **Nota**: Se você usar `docker compose up --force-recreate`, os usuários iniciais (`user1_clinic1`, `user2_clinic2`) já estarão no banco de dados de usuários devido ao `init-users.sql`. Você só precisa registrar novos usuários se quiser testar o endpoint de registro.
+
+- **Nota**: Se você usar `docker compose up --force-recreate`, os usuários iniciais (`user1_clinic1`, `user2_clinic2`) já estarão no banco de dados de usuários devido ao `init-users.sql`. Você só precisa registrar novos usuários se quiser testar o endpoint de registro.
 
 #### 2. Login de Usuário (para Clínica 1)
 
@@ -108,7 +115,8 @@ curl -X POST http://localhost:3000/auth/login \
     "password": "password"
   }'
 ```
-*   **Resultado**: Copie o `token` retornado e cole-o na variável `@jwtToken` no seu cliente HTTP.
+
+- **Resultado**: Copie o `token` retornado e cole-o na variável `@jwtToken` no seu cliente HTTP.
 
 #### 3. Listar Pacientes (Clínica 1 - PostgreSQL) com JWT
 
@@ -117,7 +125,8 @@ curl -X GET http://localhost:3000/patients \
   -H "Accept: application/json" \
   -H "Authorization: Bearer {{jwtToken}}"
 ```
-*   **Nota**: Certifique-se de que o `jwtToken` usado pertence a um usuário associado à `clinicId: 1`.
+
+- **Nota**: Certifique-se de que o `jwtToken` usado pertence a um usuário associado à `clinicId: 1`.
 
 #### 4. Criar Paciente (Clínica 1 - PostgreSQL) com JWT
 
@@ -143,7 +152,8 @@ curl -X POST http://localhost:3000/auth/login \
     "password": "password"
   }'
 ```
-*   **Resultado**: Copie o `token` retornado e cole-o na variável `@jwtToken` no seu cliente HTTP.
+
+- **Resultado**: Copie o `token` retornado e cole-o na variável `@jwtToken` no seu cliente HTTP.
 
 #### 6. Listar Pacientes (Clínica 2 - MySQL) com JWT
 
@@ -152,7 +162,8 @@ curl -X GET http://localhost:3000/patients \
   -H "Accept: application/json" \
   -H "Authorization: Bearer {{jwtToken}}"
 ```
-*   **Nota**: Certifique-se de que o `jwtToken` usado pertence a um usuário associado à `clinicId: 2`.
+
+- **Nota**: Certifique-se de que o `jwtToken` usado pertence a um usuário associado à `clinicId: 2`.
 
 #### 7. Criar Paciente (Clínica 2 - MySQL) com JWT
 
@@ -182,6 +193,7 @@ curl -X POST http://localhost:3000/patients \
     "phone": "123"
   }'
 ```
+
 Você deve receber uma resposta de erro `400 Bad Request` com detalhes sobre os campos inválidos.
 
 ### Health Check
@@ -195,6 +207,48 @@ http://localhost:3000/health/clinics
 ### Usando `patient.http`
 
 O arquivo `scripts/patient.http` contém exemplos de requisições que podem ser executadas diretamente em IDEs como o VS Code (com a extensão REST Client).
+
+## CI/CD e Qualidade de Código
+
+### 🚀 **Pipeline de CI**
+
+O projeto inclui um pipeline de Continuous Integration (CI) automatizado que executa:
+
+- **Linting** com ESLint
+- **Verificação de tipos** TypeScript
+- **Formatação** com Prettier
+- **Build** e compilação
+- **Auditoria de segurança** com npm audit
+- **Teste de Docker** build
+
+### 📋 **Scripts de Desenvolvimento**
+
+```bash
+# Desenvolvimento
+npm run dev              # Servidor em modo desenvolvimento
+npm run build            # Compilar projeto
+npm run start            # Servidor em produção
+
+# Qualidade de código
+npm run lint             # Executar ESLint
+npm run lint:fix         # ESLint com correção automática
+npm run type-check       # Verificar tipos TypeScript
+npm run format           # Formatar código com Prettier
+npm run format:check     # Verificar formatação
+
+# Segurança e CI
+npm run security:audit   # Auditoria de segurança
+npm run ci:local         # Executar pipeline completo localmente
+```
+
+### 🔧 **Ferramentas de Qualidade**
+
+- **ESLint**: Análise estática de código TypeScript
+- **Prettier**: Formatação consistente de código
+- **TypeScript**: Verificação de tipos em tempo de compilação
+- **npm audit**: Verificação de vulnerabilidades de segurança
+
+Para mais detalhes sobre o pipeline, consulte [CI Pipeline Documentation](./docs/ci-pipeline.md).
 
 ## Desligando a Aplicação
 

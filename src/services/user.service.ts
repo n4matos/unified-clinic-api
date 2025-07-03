@@ -22,12 +22,12 @@ export class UserService {
 
   async validateUser(username: string, passwordInput: string) {
     const user = await this.userRepository.findByUsername(username);
-        if (!user) {
+    if (!user) {
       throw new HttpError(401, 'Invalid username or password');
     }
 
     const isPasswordValid = await bcrypt.compare(passwordInput, user.password_hash);
-        if (!isPasswordValid) {
+    if (!isPasswordValid) {
       throw new HttpError(401, 'Invalid username or password');
     }
 

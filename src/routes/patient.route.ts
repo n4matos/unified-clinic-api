@@ -19,11 +19,11 @@ export default fp(async (app: FastifyInstance) => {
 
   app.get(
     '/patients',
-    
+
     async (request, reply) => {
       const db = app.getDbPool(request.clinicId!);
       const patients = await patientService.getAll(db);
-            return reply.send(patients);
+      return reply.send(patients);
     },
   );
 
@@ -44,7 +44,7 @@ export default fp(async (app: FastifyInstance) => {
       const db = app.getDbPool(request.clinicId!);
       const { id } = request.params as { id: string };
       const patient = await patientService.getById(db, id);
-            if (!patient) {
+      if (!patient) {
         throw new HttpError(404, 'Patient not found');
       }
       return reply.send(patient);
@@ -61,7 +61,7 @@ export default fp(async (app: FastifyInstance) => {
     async (request, reply) => {
       const db = app.getDbPool(request.clinicId!);
       const body = request.body as Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>;
-            const patient = await patientService.create(db, body);
+      const patient = await patientService.create(db, body);
       return reply.code(201).send(patient);
     },
   );
@@ -84,7 +84,7 @@ export default fp(async (app: FastifyInstance) => {
       const db = app.getDbPool(request.clinicId!);
       const { id } = request.params as { id: string };
       const body = request.body as Partial<Omit<Patient, 'id' | 'createdAt' | 'updatedAt'>>;
-            const patient = await patientService.update(db, id, body);
+      const patient = await patientService.update(db, id, body);
       if (!patient) {
         throw new HttpError(404, 'Patient not found');
       }

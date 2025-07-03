@@ -6,7 +6,12 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix"
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
+    "type-check": "tsc --noEmit",
+    "security:audit": "npm audit --audit-level moderate",
+    "ci:local": "npm run lint && npm run type-check && npm run format:check && npm run build"
   },
   "dependencies": {
     "@fastify/autoload": "^6.3.1",

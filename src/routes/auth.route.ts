@@ -24,17 +24,15 @@ export default fp(async (app: FastifyInstance) => {
       password?: string;
     };
 
-        if (!username || !password) {
+    if (!username || !password) {
       throw new HttpError(400, 'Username and password are required');
     }
 
     const user = await userService.validateUser(username, password);
 
-        
-
     const tenantConfig = getTenantConfig(user.clinic_id);
 
-        if (!tenantConfig) {
+    if (!tenantConfig) {
       // This should ideally not happen if user data is consistent with tenant configs
       app.log.error(`Tenant config not found for user's clinic_id: ${user.clinic_id}`);
       throw new HttpError(500, 'Server configuration error');
@@ -42,7 +40,7 @@ export default fp(async (app: FastifyInstance) => {
 
     const secret = process.env.JWT_SECRET;
 
-        if (!secret) {
+    if (!secret) {
       app.log.error('JWT_SECRET is not defined');
       throw new HttpError(500, 'Server configuration error');
     }
@@ -60,17 +58,17 @@ export default fp(async (app: FastifyInstance) => {
       clinicId?: string;
     };
 
-        if (!username || !password || !clinicId) {
+    if (!username || !password || !clinicId) {
       throw new HttpError(400, 'Username, password, and clinicId are required');
     }
 
     const tenantConfig = getTenantConfig(clinicId);
-        if (!tenantConfig) {
+    if (!tenantConfig) {
       throw new HttpError(404, 'Clinic not found or not active');
     }
 
-        const existingUser = await userRepository.findByUsername(username);
-        if (existingUser) {
+    const existingUser = await userRepository.findByUsername(username);
+    if (existingUser) {
       throw new HttpError(409, 'Username already exists');
     }
 
@@ -79,6 +77,9 @@ export default fp(async (app: FastifyInstance) => {
       password,
       clinic_id: clinicId,
     });
-    return reply.status(201).send({ message: 'User registered successfully', user: { id: newUser.id, username: newUser.username, clinic_id: newUser.clinic_id } });
+    return reply.status(201).send({
+      message: 'User registered successfully',
+      user: { id: newUser.id, username: newUser.username, clinic_id: newUser.clinic_id },
+    });
   });
 });
