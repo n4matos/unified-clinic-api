@@ -1,11 +1,12 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import jwt from 'jsonwebtoken';
-import { getTenantConfig } from '../config/tenants.config';
+import { ClinicRepository } from '../repositories/clinic.repository';
 
 declare module 'fastify' {
   interface FastifyRequest {
     clinicId?: string;
+    clientId?: string;
   }
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -29,16 +30,31 @@ export default fp(async (app) => {
     }
 
     try {
-      const decoded = jwt.verify(token, secret) as { clinicId: string };
-      const clinicId = decoded.clinicId;
+      const decoded = jwt.verify(token, secret) as {
+        sub: string;
+        clinic_id: string;
+        iat: number;
+        exp: number;
+      };
 
-      const tenantConfig = getTenantConfig(clinicId);
+      const clientId = decoded.sub;
+      const clinicId = decoded.clinic_id;
 
-      if (!tenantConfig) {
-        throw app.httpErrors.forbidden('Invalid clinic ID in token');
+      // Verify if the clinic still exists
+      const clinicRepository = new ClinicRepository(app.userDb);
+      const clinic = await clinicRepository.findById(clinicId);
+
+      if (!clinic) {
+        throw app.httpErrors.forbidden('Clinic not found or deactivated');
+      }
+
+      // Verify if the client_id in the token matches the clinic's client_id
+      if (clinic.client_id !== clientId) {
+        throw app.httpErrors.forbidden('Invalid client credentials in token');
       }
 
       request.clinicId = clinicId;
+      request.clientId = clientId;
     } catch (error) {
       if (error instanceof jwt.JsonWebTokenError) {
         throw app.httpErrors.unauthorized(`Invalid token: ${error.message}`);

@@ -1,17 +1,17 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import knex, { Knex } from 'knex';
-import { userDatabaseConfig, validateDatabaseConfig } from '../config/database.config';
+import { clinicDatabaseConfig, validateDatabaseConfig } from '../config/database.config';
 
-export interface UserDatabasePluginOptions {
-  config?: typeof userDatabaseConfig;
+export interface ClinicDatabasePluginOptions {
+  config?: typeof clinicDatabaseConfig;
 }
 
-async function userDatabasePlugin(
+async function clinicDatabasePlugin(
   fastify: FastifyInstance,
-  options: UserDatabasePluginOptions = {},
+  options: ClinicDatabasePluginOptions = {},
 ): Promise<void> {
-  const config = options.config ?? userDatabaseConfig;
+  const config = options.config ?? clinicDatabaseConfig;
 
   // Validar configuração
   validateDatabaseConfig(config);
@@ -22,9 +22,9 @@ async function userDatabasePlugin(
   // Testar conexão
   try {
     await userDb.raw('SELECT 1');
-    fastify.log.info('User database connection established successfully');
+    fastify.log.info('Clinic database connection established successfully');
   } catch (error) {
-    fastify.log.error({ error }, 'Failed to connect to user database');
+    fastify.log.error({ error }, 'Failed to connect to clinic database');
     throw error;
   }
 
@@ -32,11 +32,11 @@ async function userDatabasePlugin(
   fastify.decorate('userDb', userDb);
 
   // Métodos utilitários
-  fastify.decorate('getUserDb', function () {
+  fastify.decorate('getClinicDb', function (this: FastifyInstance) {
     return this.userDb;
   });
 
-  fastify.decorate('isUserDbHealthy', async function () {
+  fastify.decorate('isClinicDbHealthy', async function (this: FastifyInstance) {
     try {
       await this.userDb.raw('SELECT 1');
       return true;
@@ -49,14 +49,14 @@ async function userDatabasePlugin(
   fastify.addHook('onClose', async () => {
     try {
       await userDb.destroy();
-      fastify.log.info('User database connection closed');
+      fastify.log.info('Clinic database connection closed');
     } catch (error) {
-      fastify.log.error({ error }, 'Error closing user database connection');
+      fastify.log.error({ error }, 'Error closing clinic database connection');
     }
   });
 }
 
-export default fp(userDatabasePlugin, {
-  name: 'user-database',
+export default fp(clinicDatabasePlugin, {
+  name: 'clinic-database',
   dependencies: [],
 });

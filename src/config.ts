@@ -6,11 +6,11 @@ export const config = {
   },
   userDatabase: {
     url:
-      process.env.USERS_DATABASE_URL ||
-      'postgres://user:password@localhost:5432/unified_clinic_users',
-    poolMin: parseInt(process.env.USER_DB_POOL_MIN || '2', 10),
-    poolMax: parseInt(process.env.USER_DB_POOL_MAX || '10', 10),
-    timeout: parseInt(process.env.USER_DB_TIMEOUT || '60000', 10),
+      process.env.CLINICS_DATABASE_URL ||
+      'postgres://user:password@localhost:5432/unified_clinic_clinics',
+    poolMin: parseInt(process.env.CLINICS_DB_POOL_MIN || '2', 10),
+    poolMax: parseInt(process.env.CLINICS_DB_POOL_MAX || '10', 10),
+    timeout: parseInt(process.env.CLINICS_DB_TIMEOUT || '60000', 10),
   },
   jwt: {
     secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',

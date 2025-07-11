@@ -11,7 +11,7 @@ export interface DatabaseConfig {
   acquireConnectionTimeout?: number;
 }
 
-export const userDatabaseConfig: DatabaseConfig = {
+export const clinicDatabaseConfig: DatabaseConfig = {
   client: 'pg',
   connection: config.userDatabase.url,
   pool: {

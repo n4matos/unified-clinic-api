@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 
 import multiTenancy from './plugins/multiTenancy';
 import errorHandler from './plugins/errorHandler';
-import userDatabase from './plugins/userDatabase';
+import clinicDatabase from './plugins/clinicDatabase';
 
 import { getActiveTenants } from './config/tenants.config';
 import authMiddleware from './middleware/auth.middleware';
@@ -33,8 +33,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.register(errorHandler);
   app.register(sensible);
 
-  /* ---------- banco de usuários ---------- */
-  await app.register(userDatabase);
+  /* ---------- banco de clínicas ---------- */
+  await app.register(clinicDatabase);
 
   /* ---------- multi-tenancy ---------- */
   await app.register(multiTenancy, { tenants: getActiveTenants() });
