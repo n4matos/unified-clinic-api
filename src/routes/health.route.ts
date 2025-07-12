@@ -13,18 +13,17 @@ export default fp(async (app: FastifyInstance) => {
   });
 
   app.get('/health/clinics', async (request, reply) => {
-    const failedInitializations = app.failedTenantInitializations || [];
-    const overallStatus = failedInitializations.length > 0 ? 'degraded' : 'healthy';
+    const tenantStats = app.getTenantStats();
+    const overallStatus = tenantStats.failedConnections > 0 ? 'degraded' : 'healthy';
     const message =
       overallStatus === 'degraded'
-        ? 'API is running with some tenant initialization failures'
-        : 'API is running';
+        ? 'API is running with some tenant connection failures'
+        : 'API is running with lazy-loaded tenant connections';
 
     request.log.info(
       {
         status: overallStatus,
-        failedCount: failedInitializations.length,
-        failedTenants: failedInitializations,
+        ...tenantStats,
       },
       'health check - clinics status'
     );
@@ -32,7 +31,13 @@ export default fp(async (app: FastifyInstance) => {
     return reply.send({
       status: overallStatus,
       message,
-      failedTenantInitializations: failedInitializations,
+      statistics: {
+        lazyLoadedTenants: tenantStats.lazyLoadedTenants,
+        failedConnections: tenantStats.failedConnections,
+        activeConnections: tenantStats.activeConnections.length,
+        failedTenants: tenantStats.failedTenants,
+      },
+      timestamp: new Date().toISOString(),
     });
   });
 

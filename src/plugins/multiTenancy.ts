@@ -5,40 +5,63 @@ import { DatabaseManager } from '../config/db.config';
 export default fp(
   async (app: FastifyInstance) => {
     const dbManager = DatabaseManager.getInstance();
-    const failedTenantInitializations: string[] = [];
+    const lazyLoadedTenants: string[] = [];
+    const failedTenantConnections: string[] = [];
 
-    // Tenta carregar todos os tenants no startup
+    // Só valida se tenants existem no banco de configuração, não conecta ainda
     try {
       const tenants = await dbManager.getAllTenants();
-
-      for (const tenant of tenants) {
-        try {
-          // Tenta criar conexão com o tenant
-          await dbManager.getTenantPool(tenant.tenant_id);
-          app.log.info(`✅ DB ready - tenant ${tenant.tenant_id}`);
-        } catch (err) {
-          app.log.error({ err }, `❌ DB fail - tenant ${tenant.tenant_id}`);
-          failedTenantInitializations.push(tenant.tenant_id);
-        }
-      }
+      app.log.info(`📋 Found ${tenants.length} tenants (connections will be lazy-loaded)`);
+      
+      // Log dos tenants disponíveis para debug
+      tenants.forEach(tenant => {
+        app.log.info(`📌 Available tenant: ${tenant.tenant_id} (${tenant.db_type}://${tenant.db_host}:${tenant.db_port}/${tenant.db_name})`);
+      });
+      
     } catch (error) {
-      app.log.error({ error }, 'Failed to load tenants from database');
+      app.log.error({ error }, '❌ Failed to load tenant configurations from database');
+      throw new Error('Cannot start without tenant configurations');
     }
 
+    // Decorator para obter pool de conexão com lazy loading
     app.decorate('getDbPool', async (tenantId: string) => {
       try {
+        // Tenta obter o pool (vai criar se não existir)
         const pool = await dbManager.getTenantPool(tenantId);
+        
+        // Log apenas na primeira conexão (lazy loading)
+        if (!lazyLoadedTenants.includes(tenantId)) {
+          app.log.info(`🔄 Lazy-loaded tenant: ${tenantId}`);
+          lazyLoadedTenants.push(tenantId);
+        }
+        
         return pool;
-      } catch {
+      } catch (err) {
+        app.log.error({ err }, `❌ Failed to lazy-load tenant: ${tenantId}`);
+        
+        // Registra falha apenas uma vez
+        if (!failedTenantConnections.includes(tenantId)) {
+          failedTenantConnections.push(tenantId);
+        }
+        
         throw app.httpErrors.notFound(`Tenant '${tenantId}' não encontrado ou inacessível`);
       }
     });
 
-    app.decorate('failedTenantInitializations', failedTenantInitializations);
+    // Decorator para estatísticas de conexões
+    app.decorate('getTenantStats', () => {
+      return {
+        lazyLoadedTenants: lazyLoadedTenants.length,
+        failedConnections: failedTenantConnections.length,
+        activeConnections: lazyLoadedTenants.filter(t => !failedTenantConnections.includes(t)),
+        failedTenants: failedTenantConnections
+      };
+    });
 
+    // Hook para cleanup ao fechar a aplicação
     app.addHook('onClose', async () => {
       await dbManager.closeAllConnections();
-      app.log.info('All tenant pools closed');
+      app.log.info(`🔒 All tenant pools closed. Stats: ${lazyLoadedTenants.length} lazy-loaded, ${failedTenantConnections.length} failed`);
     });
   },
   { name: 'multiTenancy' }
