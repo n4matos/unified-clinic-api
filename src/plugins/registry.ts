@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 
 // Plugins de infraestrutura
+import helmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
 import errorHandler from '../plugins/errorHandler';
 import configDatabase from '../plugins/configDatabase';
@@ -24,6 +25,7 @@ export class PluginRegistry {
    */
   static async registerInfrastructurePlugins(app: FastifyInstance): Promise<void> {
     // Plugins comuns
+    await app.register(helmet);
     await app.register(errorHandler);
     await app.register(sensible);
 
