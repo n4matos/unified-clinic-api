@@ -16,16 +16,16 @@ declare module 'fastify' {
       activeConnections: string[];
       failedTenants: string[];
     };
-    
+
     // Authentication decorator
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
-    
+
     // Service decorators
     professionalService: ProfessionalService;
     registrationDataService: RegistrationDataService;
     invoiceService: InvoiceService;
   }
-  
+
   interface FastifyRequest {
     clinicId?: string;
     tenantId?: string;
