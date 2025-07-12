@@ -66,8 +66,9 @@ Isso permite máxima flexibilidade, permitindo que cada tenant use o tipo de ban
 #### Arquivos Removidos/Obsoletos
 
 Esta versão removeu funcionalidades relacionadas a pacientes para focar exclusivamente no gerenciamento de tenants:
+
 - Rotas de pacientes foram removidas
-- Repositórios e serviços específicos de pacientes foram removidos  
+- Repositórios e serviços específicos de pacientes foram removidos
 - Schemas de validação de pacientes foram removidos
 - Tipos TypeScript relacionados a pacientes foram removidos
 
@@ -79,27 +80,52 @@ Certifique-se de ter o [Docker](https://docs.docker.com/get-docker/) e o [Docker
 
 ### Variáveis de Ambiente
 
-- `JWT_SECRET`: String secreta para assinar e verificar JWTs. Defina uma chave forte em produção.
-- `CLINICS_DATABASE_URL`: String de conexão para o banco central onde estão armazenadas as configurações dos tenants.
-- `NODE_ENV`: Ambiente da aplicação (development, production).
-- `PORT`: Porta da aplicação (padrão: 3000).
+A aplicação utiliza o sistema de variáveis de ambiente para configuração flexível entre diferentes ambientes (desenvolvimento, produção, teste).
+
+#### Configuração Rápida
+
+1. **Copie o arquivo de exemplo**:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edite as configurações principais**:
+   - `JWT_SECRET`: Chave secreta forte para JWTs (obrigatória em produção)
+   - `CLINICS_DATABASE_URL`: URL do banco PostgreSQL central
+   - `PORT`: Porta da aplicação (padrão: 3000)
+   - `NODE_ENV`: Ambiente (development, production, test)
+
+#### Variáveis Principais
+
+| Variável               | Descrição             | Obrigatória    |
+| ---------------------- | --------------------- | -------------- |
+| `JWT_SECRET`           | Chave secreta do JWT  | **Sim (prod)** |
+| `CLINICS_DATABASE_URL` | URL do banco central  | **Sim (prod)** |
+| `PORT`                 | Porta do servidor     | Não            |
+| `NODE_ENV`             | Ambiente da aplicação | Não            |
+
+📖 **Documentação Completa**: Veja [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) para todas as variáveis disponíveis, exemplos de configuração e troubleshooting.
 
 ### Iniciando a Aplicação
 
 #### Opção 1: Desenvolvimento Local
 
 1. **Instale as dependências**:
+
    ```bash
    npm install
    ```
 
 2. **Configure as variáveis de ambiente**:
+
    ```bash
    cp .env.example .env
    # Edite o arquivo .env com suas configurações
    ```
 
 3. **Inicie o banco central PostgreSQL** (via Docker):
+
    ```bash
    docker run -d --name postgres-central \
      -e POSTGRES_USER=user \
@@ -110,6 +136,7 @@ Certifique-se de ter o [Docker](https://docs.docker.com/get-docker/) e o [Docker
    ```
 
 4. **Execute o script de inicialização**:
+
    ```bash
    # Copie o conteúdo de scripts/init-clinics.sql e execute no banco
    ```
@@ -127,6 +154,7 @@ Certifique-se de ter o [Docker](https://docs.docker.com/get-docker/) e o [Docker
    ```
 
 Este comando irá:
+
 - Construir a imagem Docker da API
 - Iniciar o PostgreSQL central com as configurações dos tenants
 - Iniciar bancos de exemplo (PostgreSQL, MySQL) para testes
@@ -156,6 +184,7 @@ curl -X POST http://localhost:3000/auth/login \
 ```
 
 **Resposta:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -165,8 +194,9 @@ curl -X POST http://localhost:3000/auth/login \
 #### 2. Uso do JWT
 
 O JWT gerado contém:
+
 - `sub`: client_id do tenant
-- `tenant_id`: ID do tenant  
+- `tenant_id`: ID do tenant
 - `iat`: timestamp de criação
 - `exp`: timestamp de expiração
 
@@ -177,11 +207,13 @@ O JWT gerado contém:
 curl -X GET http://localhost:3000/protected-route \
   -H "Authorization: Bearer <jwt_token>"
 ```
-  -H "Authorization: Bearer {{jwtToken}}" \
-  -d '{
-    "name": "Maria Souza JWT",
-    "email": "maria.jwt@exemplo.com",
-    "phone": "21777777777",
+
+-H "Authorization: Bearer {{jwtToken}}" \
+ -d '{
+"name": "Maria Souza JWT",
+"email": "maria.jwt@exemplo.com",
+"phone": "21777777777",
+
 ## Teste da API
 
 ### Exemplos de Requisições
@@ -197,7 +229,7 @@ Você pode verificar o status da aplicação através dos endpoints:
 curl http://localhost:3000/health
 
 # Status dos tenants e suas conexões
-curl http://localhost:3000/health/clinics  
+curl http://localhost:3000/health/clinics
 
 # Status do banco central
 curl http://localhost:3000/health/configdb
@@ -218,7 +250,7 @@ curl -X POST http://localhost:3000/tenants \
   -H "Content-Type: application/json" \
   -d '{
     "tenant_id": "clinic1",
-    "client_id": "client1", 
+    "client_id": "client1",
     "client_secret": "secret1",
     "db_type": "pg",
     "db_host": "localhost",
@@ -586,6 +618,6 @@ npm run ci:local     # Verificação completa (CI local)
 ### Melhorias de Segurança
 
 - [ ] Rotação automática de secrets
-- [ ] Auditoria de acesso por tenant  
+- [ ] Auditoria de acesso por tenant
 - [ ] Implementação de RBAC (Role-Based Access Control)
 - [ ] Validação de certificados SSL para conexões de tenants

@@ -1,9 +1,10 @@
+// Carregar variáveis de ambiente antes de qualquer outra importação
 import 'dotenv/config';
 import { buildApp } from './app';
+import { config } from './config';
 
 async function start(): Promise<void> {
   const app = await buildApp();
-  const PORT = Number(process.env.PORT) || 3000;
 
   /* graceful shutdown */
   const shutdown = async (signal: string) => {
@@ -30,9 +31,10 @@ async function start(): Promise<void> {
   });
 
   try {
-    await app.listen({ port: PORT, host: '0.0.0.0' });
-    app.log.info(`🚀  Server ready at http://localhost:${PORT}`);
+    await app.listen({ port: config.port, host: '0.0.0.0' });
+    app.log.info(`🚀  Server ready at http://localhost:${config.port}`);
     app.log.info(`📍 Health check → /health/clinics`);
+    app.log.info(`🏗️  Environment: ${config.environment}`);
   } catch (err) {
     app.log.fatal(err, 'Failed to start server');
     process.exit(1);

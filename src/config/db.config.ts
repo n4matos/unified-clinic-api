@@ -19,19 +19,19 @@ export interface DbPool extends Knex {
 
 export class DatabaseManager {
   private static instance: DatabaseManager;
-  private centralDb: Knex;
+  private configDb: Knex;
   private tenantPools: Map<string, DbPool> = new Map();
 
   private constructor() {
-    // Inicializa conexão central para leitura da tabela tenants
-    this.centralDb = knex({
+    // Inicializa conexão com banco de configurações para leitura da tabela tenants
+    this.configDb = knex({
       client: 'pg',
-      connection: config.userDatabase.url,
+      connection: config.clinicsDatabase.url,
       pool: {
-        min: config.userDatabase.poolMin,
-        max: config.userDatabase.poolMax,
+        min: config.clinicsDatabase.poolMin,
+        max: config.clinicsDatabase.poolMax,
       },
-      acquireConnectionTimeout: config.userDatabase.timeout,
+      acquireConnectionTimeout: config.clinicsDatabase.timeout,
     });
   }
 
@@ -42,8 +42,8 @@ export class DatabaseManager {
     return DatabaseManager.instance;
   }
 
-  getCentralDb(): Knex {
-    return this.centralDb;
+  getConfigDb(): Knex {
+    return this.configDb;
   }
 
   async getTenantPool(tenantId: string): Promise<DbPool> {
@@ -52,8 +52,8 @@ export class DatabaseManager {
       return this.tenantPools.get(tenantId)!;
     }
 
-    // Busca configuração do tenant no banco central
-    const tenantConfig = await this.centralDb('tenants')
+    // Busca configuração do tenant no banco de configurações
+    const tenantConfig = await this.configDb('tenants')
       .where({ tenant_id: tenantId })
       .first<TenantDbConfig>();
 
@@ -111,11 +111,11 @@ export class DatabaseManager {
   }
 
   async getAllTenants(): Promise<TenantDbConfig[]> {
-    return this.centralDb('tenants').select('*');
+    return this.configDb('tenants').select('*');
   }
 
   async getTenantByClientId(clientId: string): Promise<TenantDbConfig | undefined> {
-    return this.centralDb('tenants').where({ client_id: clientId }).first<TenantDbConfig>();
+    return this.configDb('tenants').where({ client_id: clientId }).first<TenantDbConfig>();
   }
 
   async refreshTenantPool(tenantId: string): Promise<void> {
@@ -132,8 +132,8 @@ export class DatabaseManager {
     await Promise.allSettled(Array.from(this.tenantPools.values()).map((pool) => pool.destroy()));
     this.tenantPools.clear();
 
-    // Fecha conexão central
-    await this.centralDb.destroy();
+    // Fecha conexão com banco de configurações
+    await this.configDb.destroy();
   }
 }
 
@@ -150,12 +150,12 @@ export interface DatabaseConfig {
 
 export const configDatabaseConfig: DatabaseConfig = {
   client: 'pg',
-  connection: config.userDatabase.url,
+  connection: config.clinicsDatabase.url,
   pool: {
-    min: config.userDatabase.poolMin,
-    max: config.userDatabase.poolMax,
+    min: config.clinicsDatabase.poolMin,
+    max: config.clinicsDatabase.poolMax,
   },
-  acquireConnectionTimeout: config.userDatabase.timeout,
+  acquireConnectionTimeout: config.clinicsDatabase.timeout,
 };
 
 export const validateDatabaseConfig = (config: DatabaseConfig): void => {

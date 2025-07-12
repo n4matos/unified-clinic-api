@@ -51,8 +51,8 @@ export class TenantService {
     };
 
     try {
-      const centralDb = this.dbManager.getCentralDb();
-      const [createdTenant] = await centralDb('tenants').insert(tenantToCreate).returning('*');
+      const configDb = this.dbManager.getConfigDb();
+      const [createdTenant] = await configDb('tenants').insert(tenantToCreate).returning('*');
 
       return createdTenant;
     } catch (error) {
@@ -65,14 +65,14 @@ export class TenantService {
     updateData: Partial<TenantDbConfig>
   ): Promise<TenantDbConfig> {
     try {
-      const centralDb = this.dbManager.getCentralDb();
+      const configDb = this.dbManager.getConfigDb();
 
       // Se está atualizando o client_secret, fazer hash
       if (updateData.client_secret) {
         updateData.client_secret = await bcrypt.hash(updateData.client_secret, 10);
       }
 
-      const [updatedTenant] = await centralDb('tenants')
+      const [updatedTenant] = await configDb('tenants')
         .where({ tenant_id: tenantId })
         .update(updateData)
         .returning('*');
@@ -104,8 +104,8 @@ export class TenantService {
 
   async deleteTenant(tenantId: string): Promise<void> {
     try {
-      const centralDb = this.dbManager.getCentralDb();
-      const deletedCount = await centralDb('tenants').where({ tenant_id: tenantId }).del();
+      const configDb = this.dbManager.getConfigDb();
+      const deletedCount = await configDb('tenants').where({ tenant_id: tenantId }).del();
 
       if (deletedCount === 0) {
         throw new HttpError(404, 'Tenant not found');
