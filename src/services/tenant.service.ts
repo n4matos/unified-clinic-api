@@ -40,9 +40,7 @@ export class TenantService {
     return tenant;
   }
 
-  async createTenant(
-    tenantData: Omit<TenantDbConfig, 'client_secret'> & { client_secret: string }
-  ): Promise<TenantDbConfig> {
+  async createTenant(tenantData: TenantDbConfig): Promise<TenantDbConfig> {
     const hashedSecret = await bcrypt.hash(tenantData.client_secret, 10);
 
     const tenantToCreate = {
