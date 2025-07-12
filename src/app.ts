@@ -1,59 +1,33 @@
 import Fastify, { FastifyInstance } from 'fastify';
-import sensible from '@fastify/sensible';
 import { randomUUID } from 'crypto';
 
-import multiTenancy from './plugins/multiTenancy';
-import errorHandler from './plugins/errorHandler';
-import configDatabase from './plugins/configDatabase';
+import { createAppConfig } from './config/app.config';
+import { PluginRegistry } from './plugins/registry';
+import { HookRegistry } from './hooks/registry';
 
-import authMiddleware from './middleware/auth.middleware';
-import authRoutes from './routes/auth.route';
-import healthRoutes from './routes/health.route';
-import tenantRoutes from './routes/tenant.route';
-
+/**
+ * Factory para criar e configurar a instância do Fastify
+ * Implementa os princípios SOLID e padrões de design
+ *
+ * @returns Instância configurada do Fastify
+ */
 export async function buildApp(): Promise<FastifyInstance> {
-  const isProd = process.env.NODE_ENV === 'production';
+  const config = createAppConfig();
 
+  // Criação da instância Fastify com configurações externalizadas
   const app = Fastify({
-    /* ---------- logger ---------- */
-    logger: isProd
-      ? { level: 'info', base: undefined, timestamp: true }
-      : {
-          level: 'debug',
-          transport: {
-            target: 'pino-pretty',
-            options: { colorize: true, translateTime: 'HH:MM:ss', ignore: 'pid,hostname' },
-          },
-        },
+    logger: config.logger,
     genReqId: () => randomUUID(),
   });
 
-  /* ---------- plugins comuns ---------- */
-  app.register(errorHandler);
-  app.register(sensible);
+  // Usar a abordagem original mais simples por ora
+  await PluginRegistry.registerInfrastructurePlugins(app);
+  await PluginRegistry.registerPublicRoutes(app);
+  await PluginRegistry.registerAuthMiddleware(app);
+  await PluginRegistry.registerProtectedRoutes(app);
 
-  /* ---------- banco de configurações ---------- */
-  await app.register(configDatabase);
-
-  /* ---------- multi-tenancy ---------- */
-  await app.register(multiTenancy);
-
-  /* ---------- rotas públicas ---------- */
-  app.register(authRoutes);
-  app.register(healthRoutes);
-  app.register(tenantRoutes); // Rotas administrativas para gerenciar tenants
-
-  /* ---------- middleware de autenticação disponível para futuras rotas ---------- */
-  app.register(authMiddleware);
-
-  /* ---------- log de requisição ---------- */
-  app.addHook('onResponse', (req, rep, done) => {
-    req.log.info(
-      { statusCode: rep.statusCode, resTime: `${rep.elapsedTime.toFixed(1)}ms` },
-      'request completed'
-    );
-    done();
-  });
+  // Registro de hooks
+  HookRegistry.registerLoggingHooks(app);
 
   return app;
 }
