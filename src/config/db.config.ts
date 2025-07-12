@@ -72,20 +72,31 @@ export class DatabaseManager {
 
   private async createTenantPool(config: TenantDbConfig): Promise<DbPool> {
     let client: string;
-    let connectionString: string;
+    let connectionConfig: string | object;
 
     switch (config.db_type) {
       case 'pg':
         client = 'pg';
-        connectionString = `postgresql://${config.db_user}:${config.db_pass}@${config.db_host}:${config.db_port}/${config.db_name}`;
+        connectionConfig = `postgresql://${config.db_user}:${config.db_pass}@${config.db_host}:${config.db_port}/${config.db_name}`;
         break;
       case 'mysql':
         client = 'mysql2';
-        connectionString = `mysql://${config.db_user}:${config.db_pass}@${config.db_host}:${config.db_port}/${config.db_name}`;
+        connectionConfig = `mysql://${config.db_user}:${config.db_pass}@${config.db_host}:${config.db_port}/${config.db_name}`;
         break;
       case 'mssql':
         client = 'mssql';
-        connectionString = `mssql://${config.db_user}:${config.db_pass}@${config.db_host}:${config.db_port}/${config.db_name}`;
+        connectionConfig = {
+          server: config.db_host,
+          port: config.db_port,
+          user: config.db_user,
+          password: config.db_pass,
+          database: config.db_name,
+          options: {
+            encrypt: false, // Use true se estiver usando SSL
+            trustServerCertificate: true, // Para desenvolvimento local
+            enableArithAbort: true,
+          },
+        };
         break;
       default:
         throw new Error(`Unsupported database type: ${config.db_type}`);
@@ -93,7 +104,7 @@ export class DatabaseManager {
 
     const pool = knex({
       client,
-      connection: connectionString,
+      connection: connectionConfig,
       pool: { min: 1, max: 5 },
     }) as DbPool;
 
