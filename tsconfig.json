@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "es2022",
-    "moduleResolution": "node",
-    "outDir": "dist",
-    "rootDir": "src",
+    "module": "commonjs", // Chave para CJS: imports sem .js
+    "moduleResolution": "node", // Resolução clássica do Node
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
 }
