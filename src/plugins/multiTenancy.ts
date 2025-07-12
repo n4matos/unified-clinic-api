@@ -1,55 +1,44 @@
 import fp from 'fastify-plugin';
-import knex from 'knex';
 import { FastifyInstance } from 'fastify';
-import { DbPool } from '../types/db.types';
-
-interface TenantConfig {
-  id: string;
-  connEnv: string;
-  type: 'postgres' | 'mysql';
-}
+import { DatabaseManager, DbPool } from '../config/db.config';
 
 export default fp(
-  async (app: FastifyInstance, opts: { tenants: TenantConfig[] }) => {
-    const pools = new Map<string, DbPool>();
+  async (app: FastifyInstance) => {
+    const dbManager = DatabaseManager.getInstance();
     const failedTenantInitializations: string[] = [];
 
-    for (const t of opts.tenants) {
-      const conn = process.env[t.connEnv];
-      if (!conn) {
-        app.log.warn(`⚠️  ${t.id}: env ${t.connEnv} not set`);
-        continue;
-      }
+    // Tenta carregar todos os tenants no startup
+    try {
+      const tenants = await dbManager.getAllTenants();
 
-      const pool = knex({
-        client: t.type === 'postgres' ? 'pg' : 'mysql2',
-        connection: conn,
-        pool: { min: 2, max: 10 },
-      }) as DbPool;
-      pool.type = t.type;
-
-      try {
-        await pool.raw('SELECT 1');
-        pools.set(t.id, pool);
-        app.log.info(`✅ DB ready - clinic ${t.id}`);
-      } catch (err) {
-        app.log.error({ err }, `❌ DB fail - clinic ${t.id}`);
-        failedTenantInitializations.push(t.id);
-        await pool.destroy();
+      for (const tenant of tenants) {
+        try {
+          // Tenta criar conexão com o tenant
+          await dbManager.getTenantPool(tenant.tenant_id);
+          app.log.info(`✅ DB ready - tenant ${tenant.tenant_id}`);
+        } catch (err) {
+          app.log.error({ err }, `❌ DB fail - tenant ${tenant.tenant_id}`);
+          failedTenantInitializations.push(tenant.tenant_id);
+        }
       }
+    } catch (error) {
+      app.log.error({ error }, 'Failed to load tenants from database');
     }
 
-    app.decorate('getDbPool', (clinicId: string) => {
-      const pool = pools.get(clinicId);
-      if (!pool) throw app.httpErrors.notFound(`Clínica '${clinicId}' não encontrada`);
-      return pool;
+    app.decorate('getDbPool', async (tenantId: string) => {
+      try {
+        const pool = await dbManager.getTenantPool(tenantId);
+        return pool;
+      } catch (error) {
+        throw app.httpErrors.notFound(`Tenant '${tenantId}' não encontrado ou inacessível`);
+      }
     });
 
     app.decorate('failedTenantInitializations', failedTenantInitializations);
 
     app.addHook('onClose', async () => {
-      await Promise.allSettled(Array.from(pools.values()).map((p) => p.destroy()));
-      app.log.info('All clinic pools closed');
+      await dbManager.closeAllConnections();
+      app.log.info('All tenant pools closed');
     });
   },
   { name: 'multiTenancy' },

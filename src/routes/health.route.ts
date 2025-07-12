@@ -36,31 +36,31 @@ export default fp(async (app: FastifyInstance) => {
     });
   });
 
-  app.get('/health/userdb', async (request, reply) => {
-    request.log.info('health check - user database status');
+  app.get('/health/configdb', async (request, reply) => {
+    request.log.info('health check - config database status');
 
     try {
-      const isHealthy = await app.isUserDbHealthy();
+      const isHealthy = await app.isConfigDbHealthy();
 
       if (isHealthy) {
         return reply.send({
           status: 'healthy',
-          message: 'User database is responsive',
+          message: 'Config database is responsive',
           timestamp: new Date().toISOString(),
         });
       } else {
         return reply.status(503).send({
           status: 'unhealthy',
-          message: 'User database is not responsive',
+          message: 'Config database is not responsive',
           timestamp: new Date().toISOString(),
         });
       }
     } catch (error) {
-      request.log.error({ error }, 'User database health check failed');
+      request.log.error({ error }, 'Config database health check failed');
 
       return reply.status(503).send({
         status: 'unhealthy',
-        message: 'User database health check failed',
+        message: 'Config database health check failed',
         timestamp: new Date().toISOString(),
       });
     }

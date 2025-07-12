@@ -1,0 +1,175 @@
+import knex, { Knex } from 'knex';
+import { config } from '../config';
+
+export interface TenantDbConfig {
+  tenant_id: string;
+  client_id: string;
+  client_secret: string;
+  db_type: 'pg' | 'mssql' | 'mysql';
+  db_host: string;
+  db_port: number;
+  db_user: string;
+  db_pass: string;
+  db_name: string;
+}
+
+export interface DbPool extends Knex {
+  type: 'pg' | 'mssql' | 'mysql' | 'postgres';
+}
+
+export class DatabaseManager {
+  private static instance: DatabaseManager;
+  private centralDb: Knex;
+  private tenantPools: Map<string, DbPool> = new Map();
+
+  private constructor() {
+    // Inicializa conexão central para leitura da tabela tenants
+    this.centralDb = knex({
+      client: 'pg',
+      connection: config.userDatabase.url,
+      pool: {
+        min: config.userDatabase.poolMin,
+        max: config.userDatabase.poolMax,
+      },
+      acquireConnectionTimeout: config.userDatabase.timeout,
+    });
+  }
+
+  static getInstance(): DatabaseManager {
+    if (!DatabaseManager.instance) {
+      DatabaseManager.instance = new DatabaseManager();
+    }
+    return DatabaseManager.instance;
+  }
+
+  getCentralDb(): Knex {
+    return this.centralDb;
+  }
+
+  async getTenantPool(tenantId: string): Promise<DbPool> {
+    // Se o pool já existe no cache, retorna ele
+    if (this.tenantPools.has(tenantId)) {
+      return this.tenantPools.get(tenantId)!;
+    }
+
+    // Busca configuração do tenant no banco central
+    const tenantConfig = await this.centralDb('tenants')
+      .where({ tenant_id: tenantId })
+      .first<TenantDbConfig>();
+
+    if (!tenantConfig) {
+      throw new Error(`Tenant '${tenantId}' not found`);
+    }
+
+    // Cria nova conexão baseada na configuração do tenant
+    const pool = await this.createTenantPool(tenantConfig);
+
+    // Armazena no cache
+    this.tenantPools.set(tenantId, pool);
+
+    return pool;
+  }
+
+  private async createTenantPool(config: TenantDbConfig): Promise<DbPool> {
+    let client: string;
+    let connectionString: string;
+
+    switch (config.db_type) {
+      case 'pg':
+        client = 'pg';
+        connectionString = `postgresql://${config.db_user}:${config.db_pass}@${config.db_host}:${config.db_port}/${config.db_name}`;
+        break;
+      case 'mysql':
+        client = 'mysql2';
+        connectionString = `mysql://${config.db_user}:${config.db_pass}@${config.db_host}:${config.db_port}/${config.db_name}`;
+        break;
+      case 'mssql':
+        client = 'mssql';
+        connectionString = `mssql://${config.db_user}:${config.db_pass}@${config.db_host}:${config.db_port}/${config.db_name}`;
+        break;
+      default:
+        throw new Error(`Unsupported database type: ${config.db_type}`);
+    }
+
+    const pool = knex({
+      client,
+      connection: connectionString,
+      pool: { min: 1, max: 5 },
+    }) as DbPool;
+
+    // Normalizar o tipo para compatibilidade
+    pool.type = config.db_type === 'pg' ? 'postgres' : config.db_type;
+
+    // Testa a conexão
+    try {
+      await pool.raw('SELECT 1');
+      return pool;
+    } catch (error) {
+      await pool.destroy();
+      throw new Error(`Failed to connect to tenant database: ${error}`);
+    }
+  }
+
+  async getAllTenants(): Promise<TenantDbConfig[]> {
+    return this.centralDb('tenants').select('*');
+  }
+
+  async getTenantByClientId(clientId: string): Promise<TenantDbConfig | undefined> {
+    return this.centralDb('tenants').where({ client_id: clientId }).first<TenantDbConfig>();
+  }
+
+  async refreshTenantPool(tenantId: string): Promise<void> {
+    // Remove do cache para forçar recarregar na próxima consulta
+    const existingPool = this.tenantPools.get(tenantId);
+    if (existingPool) {
+      await existingPool.destroy();
+      this.tenantPools.delete(tenantId);
+    }
+  }
+
+  async closeAllConnections(): Promise<void> {
+    // Fecha todas as conexões dos tenants
+    await Promise.allSettled(Array.from(this.tenantPools.values()).map((pool) => pool.destroy()));
+    this.tenantPools.clear();
+
+    // Fecha conexão central
+    await this.centralDb.destroy();
+  }
+}
+
+// Configuração para o banco central (configurações/tenants)
+export interface DatabaseConfig {
+  client: string;
+  connection: string | Knex.ConnectionConfig;
+  pool?: {
+    min: number;
+    max: number;
+  };
+  acquireConnectionTimeout?: number;
+}
+
+export const configDatabaseConfig: DatabaseConfig = {
+  client: 'pg',
+  connection: config.userDatabase.url,
+  pool: {
+    min: config.userDatabase.poolMin,
+    max: config.userDatabase.poolMax,
+  },
+  acquireConnectionTimeout: config.userDatabase.timeout,
+};
+
+export const validateDatabaseConfig = (config: DatabaseConfig): void => {
+  if (!config.client) {
+    throw new Error('Database client is required');
+  }
+
+  if (!config.connection) {
+    throw new Error('Database connection is required');
+  }
+
+  if (config.pool) {
+    if (config.pool.min < 0 || config.pool.max < config.pool.min) {
+      throw new Error('Invalid pool configuration');
+    }
+  }
+};

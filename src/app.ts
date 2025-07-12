@@ -4,13 +4,12 @@ import { randomUUID } from 'crypto';
 
 import multiTenancy from './plugins/multiTenancy';
 import errorHandler from './plugins/errorHandler';
-import clinicDatabase from './plugins/clinicDatabase';
+import configDatabase from './plugins/configDatabase';
 
-import { getActiveTenants } from './config/tenants.config';
 import authMiddleware from './middleware/auth.middleware';
 import authRoutes from './routes/auth.route';
-import patientRoutes from './routes/patient.route';
 import healthRoutes from './routes/health.route';
+import tenantRoutes from './routes/tenant.route';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const isProd = process.env.NODE_ENV === 'production';
@@ -33,21 +32,19 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.register(errorHandler);
   app.register(sensible);
 
-  /* ---------- banco de clínicas ---------- */
-  await app.register(clinicDatabase);
+  /* ---------- banco de configurações ---------- */
+  await app.register(configDatabase);
 
   /* ---------- multi-tenancy ---------- */
-  await app.register(multiTenancy, { tenants: getActiveTenants() });
+  await app.register(multiTenancy);
 
   /* ---------- rotas públicas ---------- */
   app.register(authRoutes);
   app.register(healthRoutes);
+  app.register(tenantRoutes); // Rotas administrativas para gerenciar tenants
 
-  /* ---------- rotas autenticadas ---------- */
-  app.register(async (api) => {
-    api.register(authMiddleware);
-    api.register(patientRoutes);
-  });
+  /* ---------- middleware de autenticação disponível para futuras rotas ---------- */
+  app.register(authMiddleware);
 
   /* ---------- log de requisição ---------- */
   app.addHook('onResponse', (req, rep, done) => {

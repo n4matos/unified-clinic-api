@@ -1,11 +1,12 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import jwt from 'jsonwebtoken';
-import { ClinicRepository } from '../repositories/clinic.repository';
+import { TenantService } from '../services/tenant.service';
 
 declare module 'fastify' {
   interface FastifyRequest {
     clinicId?: string;
+    tenantId?: string;
     clientId?: string;
   }
   interface FastifyInstance {
@@ -14,6 +15,8 @@ declare module 'fastify' {
 }
 
 export default fp(async (app) => {
+  const tenantService = new TenantService();
+
   app.decorate('authenticate', async (request: FastifyRequest, _reply: FastifyReply) => {
     const authHeader = request.headers.authorization;
 
@@ -32,29 +35,30 @@ export default fp(async (app) => {
     try {
       const decoded = jwt.verify(token, secret) as {
         sub: string;
-        clinic_id: string;
+        tenant_id: string;
         iat: number;
         exp: number;
       };
 
       const clientId = decoded.sub;
-      const clinicId = decoded.clinic_id;
+      const tenantId = decoded.tenant_id;
 
-      // Verify if the clinic still exists
-      const clinicRepository = new ClinicRepository(app.userDb);
-      const clinic = await clinicRepository.findById(clinicId);
+      // Verifica se o tenant ainda existe
+      const tenant = await tenantService.getTenantByClientId(clientId);
 
-      if (!clinic) {
-        throw app.httpErrors.forbidden('Clinic not found or deactivated');
+      if (!tenant) {
+        throw app.httpErrors.forbidden('Tenant not found or deactivated');
       }
 
-      // Verify if the client_id in the token matches the clinic's client_id
-      if (clinic.client_id !== clientId) {
-        throw app.httpErrors.forbidden('Invalid client credentials in token');
+      // Verifica se o tenant_id no token corresponde ao tenant
+      if (tenant.tenant_id !== tenantId) {
+        throw app.httpErrors.forbidden('Invalid tenant credentials in token');
       }
 
-      request.clinicId = clinicId;
+      request.tenantId = tenantId;
       request.clientId = clientId;
+      // Manter compatibilidade com código existente
+      request.clinicId = tenantId;
     } catch (error) {
       if (error instanceof jwt.JsonWebTokenError) {
         throw app.httpErrors.unauthorized(`Invalid token: ${error.message}`);
