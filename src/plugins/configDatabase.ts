@@ -9,7 +9,7 @@ export interface ConfigDatabasePluginOptions {
 
 async function configDatabasePlugin(
   fastify: FastifyInstance,
-  options: ConfigDatabasePluginOptions = {},
+  options: ConfigDatabasePluginOptions = {}
 ): Promise<void> {
   const config = options.config ?? configDatabaseConfig;
 

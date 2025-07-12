@@ -34,7 +34,7 @@ export default fp(async (app: FastifyInstance) => {
         iat: now,
         exp: now + 3600, // 1 hour
       },
-      secret,
+      secret
     );
 
     return reply.send({ token });

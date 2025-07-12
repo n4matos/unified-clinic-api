@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
-import { DatabaseManager, DbPool } from '../config/db.config';
+import { DatabaseManager } from '../config/db.config';
 
 export default fp(
   async (app: FastifyInstance) => {
@@ -29,7 +29,7 @@ export default fp(
       try {
         const pool = await dbManager.getTenantPool(tenantId);
         return pool;
-      } catch (error) {
+      } catch {
         throw app.httpErrors.notFound(`Tenant '${tenantId}' não encontrado ou inacessível`);
       }
     });
@@ -41,5 +41,5 @@ export default fp(
       app.log.info('All tenant pools closed');
     });
   },
-  { name: 'multiTenancy' },
+  { name: 'multiTenancy' }
 );

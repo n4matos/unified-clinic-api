@@ -50,7 +50,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.addHook('onResponse', (req, rep, done) => {
     req.log.info(
       { statusCode: rep.statusCode, resTime: `${rep.elapsedTime.toFixed(1)}ms` },
-      'request completed',
+      'request completed'
     );
     done();
   });

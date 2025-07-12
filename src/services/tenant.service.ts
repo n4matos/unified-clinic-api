@@ -41,7 +41,7 @@ export class TenantService {
   }
 
   async createTenant(
-    tenantData: Omit<TenantDbConfig, 'client_secret'> & { client_secret: string },
+    tenantData: Omit<TenantDbConfig, 'client_secret'> & { client_secret: string }
   ): Promise<TenantDbConfig> {
     const hashedSecret = await bcrypt.hash(tenantData.client_secret, 10);
 
@@ -62,7 +62,7 @@ export class TenantService {
 
   async updateTenant(
     tenantId: string,
-    updateData: Partial<TenantDbConfig>,
+    updateData: Partial<TenantDbConfig>
   ): Promise<TenantDbConfig> {
     try {
       const centralDb = this.dbManager.getCentralDb();

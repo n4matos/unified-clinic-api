@@ -26,7 +26,7 @@ export default fp(async (app: FastifyInstance) => {
         failedCount: failedInitializations.length,
         failedTenants: failedInitializations,
       },
-      'health check - clinics status',
+      'health check - clinics status'
     );
 
     return reply.send({
