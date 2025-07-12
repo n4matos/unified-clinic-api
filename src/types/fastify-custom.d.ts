@@ -22,10 +22,10 @@ declare module 'fastify' {
     configDb: Knex;
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     getDbPool: (tenantId: string) => Promise<DbPool>;
-    
+
     // Novo sistema de estatísticas com lazy loading
     getTenantStats: () => TenantStats;
-    
+
     // Compatibilidade com versão antiga (deprecated)
     failedTenantInitializations: string[];
 
