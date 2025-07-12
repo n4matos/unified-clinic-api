@@ -4,7 +4,7 @@
 ![Node.js](https://img.shields.io/badge/node.js-18.x%20%7C%2020.x-green)
 ![TypeScript](https://img.shields.io/badge/typescript-5.5.0-blue)
 
-API em Fastify para unificar o acesso de múltiplos tenants (clínicas). Cada tenant possui sua própria base de dados (PostgreSQL, MySQL ou SQL Server), e a seleção do banco é feita através de um JWT (JSON Web Token) obtido após a autenticação com credenciais de tenant.
+API em Fastify para gerenciamento multi-tenant dinâmico. Cada tenant possui sua própria configuração de banco de dados (PostgreSQL, MySQL ou SQL Server) armazenada em um banco central, com autenticação baseada em JWT e seleção automática de conexão por tenant.
 
 ## Arquitetura
 
@@ -59,12 +59,17 @@ Isso permite máxima flexibilidade, permitindo que cada tenant use o tipo de ban
 
 #### Scripts e Configuração
 
-- `scripts/init-clinics.sql`: Script SQL para criação da tabela `tenants` e inserção de dados de exemplo.
+- `scripts/init-clinics.sql`: Script SQL para criação da tabela `tenants` e inserção de dados de exemplo para testes.
 - `scripts/tenant-api-examples.http`: Exemplos de requisições HTTP para testar a API (compatível com REST Client do VS Code).
-- `docker-compose.yml`: Configuração Docker para PostgreSQL (banco central e tenants) e MySQL (para tenants que preferem MySQL).
-- `scripts/init.sql`: Script de inicialização para o banco de dados PostgreSQL das clínicas.
-- `scripts/init-mysql.sql`: Script de inicialização para o banco de dados MySQL das clínicas.
-- `scripts/init-users.sql`: Script de inicialização para o banco de dados de usuários da API.
+- `docker-compose.yml`: Configuração Docker para PostgreSQL (banco central e tenants de exemplo) e MySQL (para tenants que preferem MySQL).
+
+#### Arquivos Removidos/Obsoletos
+
+Esta versão removeu funcionalidades relacionadas a pacientes para focar exclusivamente no gerenciamento de tenants:
+- Rotas de pacientes foram removidas
+- Repositórios e serviços específicos de pacientes foram removidos  
+- Schemas de validação de pacientes foram removidos
+- Tipos TypeScript relacionados a pacientes foram removidos
 
 ## Configuração e Inicialização
 
@@ -74,167 +79,172 @@ Certifique-se de ter o [Docker](https://docs.docker.com/get-docker/) e o [Docker
 
 ### Variáveis de Ambiente
 
-- `JWT_SECRET`: Uma string secreta forte usada para assinar e verificar os JWTs. Definida no `docker-compose.yml`.
-- `USERS_DATABASE_URL`: String de conexão para o banco de dados de usuários da API. Definida no `docker-compose.yml`.
+- `JWT_SECRET`: String secreta para assinar e verificar JWTs. Defina uma chave forte em produção.
+- `CLINICS_DATABASE_URL`: String de conexão para o banco central onde estão armazenadas as configurações dos tenants.
+- `NODE_ENV`: Ambiente da aplicação (development, production).
+- `PORT`: Porta da aplicação (padrão: 3000).
 
 ### Iniciando a Aplicação
 
-1.  **Construa e inicie os containers Docker**:
+#### Opção 1: Desenvolvimento Local
 
-    ```bash
-    docker compose up --build -d --force-recreate
-    ```
+1. **Instale as dependências**:
+   ```bash
+   npm install
+   ```
 
-    Este comando irá:
-    - Construir a imagem Docker da API.
-    - Iniciar os containers do PostgreSQL para usuários (`db_users`), PostgreSQL para clínicas (`db_postgres`), MySQL para clínicas (`db_mysql`) e a API (`api`).
-    - Os bancos de dados serão inicializados com os schemas e dados definidos em seus respectivos scripts `init-*.sql`.
-    - A API aguardará até que todos os serviços de banco de dados estejam saudáveis antes de iniciar.
+2. **Configure as variáveis de ambiente**:
+   ```bash
+   cp .env.example .env
+   # Edite o arquivo .env com suas configurações
+   ```
 
-2.  **Verifique o status dos containers**:
-    ```bash
-    docker compose ps
-    ```
-    Você deve ver todos os serviços (`api`, `db_users`, `db_postgres`, `db_mysql`) com status `running` e `healthy`.
+3. **Inicie o banco central PostgreSQL** (via Docker):
+   ```bash
+   docker run -d --name postgres-central \
+     -e POSTGRES_USER=user \
+     -e POSTGRES_PASSWORD=password \
+     -e POSTGRES_DB=unified_clinic_clinics \
+     -p 5432:5432 \
+     postgres:15
+   ```
 
-## Autenticação e Teste da Aplicação
+4. **Execute o script de inicialização**:
+   ```bash
+   # Copie o conteúdo de scripts/init-clinics.sql e execute no banco
+   ```
+
+5. **Inicie a aplicação**:
+   ```bash
+   npm run dev
+   ```
+
+#### Opção 2: Docker Compose
+
+1. **Inicie todos os serviços**:
+   ```bash
+   docker compose up --build -d
+   ```
+
+Este comando irá:
+- Construir a imagem Docker da API
+- Iniciar o PostgreSQL central com as configurações dos tenants
+- Iniciar bancos de exemplo (PostgreSQL, MySQL) para testes
+- Inicializar dados de exemplo
+
+## Autenticação e Uso da API
 
 A API estará disponível em `http://localhost:3000`.
 
 ### Fluxo de Autenticação
 
-Para acessar as rotas protegidas (como as de pacientes), você precisará de um JWT válido. O fluxo é o seguinte:
+1. **Autenticação de Tenant**: Use `client_id` e `client_secret` para obter um JWT
+2. **Requisições Autenticadas**: Inclua o JWT no header `Authorization: Bearer <token>`
+3. **Roteamento Automático**: O tenant é identificado automaticamente pelo JWT
 
-1.  **Registro de Usuário**: Crie um usuário associado a uma `clinicId` específica.
-2.  **Login**: Autentique-se com o nome de usuário e senha para receber um JWT.
-3.  **Requisições Protegidas**: Inclua o JWT no cabeçalho `Authorization: Bearer <token>` para acessar as rotas de negócio. O `clinicId` será extraído do JWT e usado para direcionar a requisição ao banco de dados correto.
+### Exemplo de Fluxo Completo
 
-### Exemplos de Requisições (usando `curl`)
-
-#### Variável Global para JWT
-
-Defina a variável `jwtToken` no seu cliente HTTP (como a extensão REST Client do VS Code) após o login.
-
-```
-@jwtToken = <COLE SEU JWT AQUI APÓS O LOGIN>
-```
-
-#### 1. Registrar Usuário (para Clínica 1)
-
-```bash
-curl -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "user1_clinic1",
-    "password": "password",
-    "clinicId": "1"
-  }'
-```
-
-- **Nota**: Se você usar `docker compose up --force-recreate`, os usuários iniciais (`user1_clinic1`, `user2_clinic2`) já estarão no banco de dados de usuários devido ao `init-users.sql`. Você só precisa registrar novos usuários se quiser testar o endpoint de registro.
-
-#### 2. Login de Usuário (para Clínica 1)
+#### 1. Autenticação
 
 ```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "user1_clinic1",
-    "password": "password"
+    "client_id": "client1",
+    "client_secret": "secret1"
   }'
 ```
 
-- **Resultado**: Copie o `token` retornado e cole-o na variável `@jwtToken` no seu cliente HTTP.
-
-#### 3. Listar Pacientes (Clínica 1 - PostgreSQL) com JWT
-
-```bash
-curl -X GET http://localhost:3000/patients \
-  -H "Accept: application/json" \
-  -H "Authorization: Bearer {{jwtToken}}"
+**Resposta:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
 ```
 
-- **Nota**: Certifique-se de que o `jwtToken` usado pertence a um usuário associado à `clinicId: 1`.
+#### 2. Uso do JWT
 
-#### 4. Criar Paciente (Clínica 1 - PostgreSQL) com JWT
+O JWT gerado contém:
+- `sub`: client_id do tenant
+- `tenant_id`: ID do tenant  
+- `iat`: timestamp de criação
+- `exp`: timestamp de expiração
+
+#### 3. Requisições Protegidas
 
 ```bash
-curl -X POST http://localhost:3000/patients \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer {{jwtToken}}" \
-  -d '{
-    "name": "João Silva JWT",
-    "email": "joao.jwt@exemplo.com",
-    "phone": "11777777777",
-    "birth_date": "1985-07-20"
-  }'
+# Exemplo de requisição futura (quando implementar business logic)
+curl -X GET http://localhost:3000/protected-route \
+  -H "Authorization: Bearer <jwt_token>"
 ```
-
-#### 5. Login de Usuário (para Clínica 2)
-
-```bash
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "user2_clinic2",
-    "password": "password"
-  }'
-```
-
-- **Resultado**: Copie o `token` retornado e cole-o na variável `@jwtToken` no seu cliente HTTP.
-
-#### 6. Listar Pacientes (Clínica 2 - MySQL) com JWT
-
-```bash
-curl -X GET http://localhost:3000/patients \
-  -H "Accept: application/json" \
-  -H "Authorization: Bearer {{jwtToken}}"
-```
-
-- **Nota**: Certifique-se de que o `jwtToken` usado pertence a um usuário associado à `clinicId: 2`.
-
-#### 7. Criar Paciente (Clínica 2 - MySQL) com JWT
-
-```bash
-curl -X POST http://localhost:3000/patients \
-  -H "Content-Type: application/json" \
   -H "Authorization: Bearer {{jwtToken}}" \
   -d '{
     "name": "Maria Souza JWT",
     "email": "maria.jwt@exemplo.com",
     "phone": "21777777777",
-    "birth_date": "1990-10-15"
-  }'
-```
+## Teste da API
 
-#### 8. Testando Validação de Entrada (com JWT)
+### Exemplos de Requisições
 
-Tente criar um paciente com um nome vazio ou um email inválido para ver a validação em ação:
+O projeto inclui exemplos de requisições no arquivo `scripts/tenant-api-examples.http` que podem ser executados diretamente em IDEs como VS Code (com a extensão REST Client).
+
+### Health Checks
+
+Você pode verificar o status da aplicação através dos endpoints:
 
 ```bash
-curl -X POST http://localhost:3000/patients \
+# Status geral da aplicação
+curl http://localhost:3000/health
+
+# Status dos tenants e suas conexões
+curl http://localhost:3000/health/clinics  
+
+# Status do banco central
+curl http://localhost:3000/health/configdb
+```
+
+### Gerenciamento de Tenants
+
+#### Listar Tenants
+
+```bash
+curl http://localhost:3000/tenants
+```
+
+#### Criar Tenant
+
+```bash
+curl -X POST http://localhost:3000/tenants \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer {{jwtToken}}" \
   -d '{
-    "name": "",
-    "email": "invalid-email",
-    "phone": "123"
+    "tenant_id": "clinic1",
+    "client_id": "client1", 
+    "client_secret": "secret1",
+    "db_type": "pg",
+    "db_host": "localhost",
+    "db_port": 5432,
+    "db_user": "postgres",
+    "db_pass": "password",
+    "db_name": "clinic1_db"
   }'
 ```
 
-Você deve receber uma resposta de erro `400 Bad Request` com detalhes sobre os campos inválidos.
+#### Atualizar Tenant
 
-### Health Check
-
-Você pode verificar o status de saúde da API e dos pools de conexão das clínicas acessando:
-
+```bash
+curl -X PUT http://localhost:3000/tenants/clinic1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "db_host": "new-host.com",
+    "db_port": 5433
+  }'
 ```
-http://localhost:3000/health/clinics
+
+#### Deletar Tenant
+
+```bash
+curl -X DELETE http://localhost:3000/tenants/clinic1
 ```
-
-### Usando `patient.http`
-
-O arquivo `scripts/patient.http` contém exemplos de requisições que podem ser executadas diretamente em IDEs como o VS Code (com a extensão REST Client).
 
 ## CI/CD e Qualidade de Código
 
@@ -439,9 +449,11 @@ npm start
 # Iniciar todos os serviços
 docker-compose up -d
 
-# Executar scripts de inicialização
+# Executar scripts de inicialização (se necessário)
 docker-compose exec postgres psql -U user -d unified_clinic_clinics -f /scripts/init-clinics.sql
 ```
+
+**Nota**: Os scripts de inicialização são executados automaticamente na criação dos containers.
 
 ## Arquitetura de Dados
 
@@ -554,16 +566,26 @@ npm run ci:local     # Verificação completa (CI local)
 
 ### Próximas Funcionalidades
 
-- [ ] Implementação de business logic específica por tenant
-- [ ] Sistema de audit log
+- [ ] Implementação de business logic específica por tenant (ex: pacientes, consultas)
+- [ ] Sistema de audit log para operações de tenants
 - [ ] Métricas avançadas e observabilidade
 - [ ] Backup automatizado por tenant
-- [ ] Interface administrativa web
+- [ ] Interface administrativa web para gerenciamento de tenants
+- [ ] Migrations automáticas para estruturas de dados por tenant
 
 ### Melhorias Técnicas
 
-- [ ] Implementação de rate limiting
-- [ ] Cache Redis para performance
-- [ ] Health checks mais granulares
-- [ ] Suporte a migrations por tenant
+- [ ] Implementação de rate limiting por tenant
+- [ ] Cache Redis para performance de consultas
+- [ ] Health checks mais granulares por tenant
+- [ ] Suporte a migrations dinâmicas por tenant
 - [ ] Testes automatizados completos
+- [ ] Documentação OpenAPI/Swagger
+- [ ] Monitoramento de performance por tenant
+
+### Melhorias de Segurança
+
+- [ ] Rotação automática de secrets
+- [ ] Auditoria de acesso por tenant  
+- [ ] Implementação de RBAC (Role-Based Access Control)
+- [ ] Validação de certificados SSL para conexões de tenants
