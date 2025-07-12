@@ -6,6 +6,7 @@ import sensible from '@fastify/sensible';
 import errorHandler from '../plugins/errorHandler';
 import configDatabase from '../plugins/configDatabase';
 import multiTenancy from '../plugins/multiTenancy';
+import appServices from '../plugins/appServices';
 
 // Middleware
 import authMiddleware from '../middleware/auth.middleware';
@@ -14,6 +15,8 @@ import authMiddleware from '../middleware/auth.middleware';
 import authRoutes from '../routes/auth.route';
 import healthRoutes from '../routes/health.route';
 import tenantRoutes from '../routes/tenant.route';
+import patientRoutes from '../routes/patient.route';
+import guideRoutes from '../routes/guide.route';
 
 /**
  * Registry para organizar o registro de plugins, rotas e middleware
@@ -34,6 +37,9 @@ export class PluginRegistry {
 
     // Multi-tenancy
     await app.register(multiTenancy);
+
+    // Application Services (Repositories and Services)
+    await app.register(appServices);
   }
 
   /**
@@ -55,8 +61,9 @@ export class PluginRegistry {
   /**
    * Registra rotas protegidas (futuras implementações)
    */
-  static async registerProtectedRoutes(_app: FastifyInstance): Promise<void> {
-    // Aqui serão registradas as rotas que requerem autenticação
-    // Ex: rotas de pacientes, consultas, etc.
+  static async registerProtectedRoutes(app: FastifyInstance): Promise<void> {
+    // Rotas que requerem autenticação
+    await app.register(patientRoutes);
+    await app.register(guideRoutes);
   }
 }
