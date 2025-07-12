@@ -14,5 +14,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data/clinics:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
       - ./scripts/init-clinics.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  pgdata:
