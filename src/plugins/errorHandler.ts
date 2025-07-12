@@ -19,6 +19,8 @@ async function errorHandlerPlugin(app: FastifyInstance) {
     let errorName = 'Internal Server Error';
     let validationErrors: ValidationError[] | undefined = undefined;
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     if (error instanceof HttpError) {
       statusCode = error.statusCode;
       message = error.message;
@@ -35,14 +37,33 @@ async function errorHandlerPlugin(app: FastifyInstance) {
       errorName = error.name;
     }
 
-    reply.status(statusCode).send({
+    interface ErrorResponse {
+      statusCode: number;
+      message: string;
+      error: string;
+      path: string;
+      timestamp: string;
+      stack?: string;
+      errors?: ValidationError[];
+    }
+
+    const errorResponse: ErrorResponse = {
       statusCode,
-      message,
-      error: errorName,
+      message: isProduction ? 'Internal Server Error' : message,
+      error: isProduction ? 'Internal Server Error' : errorName,
       path: request.url,
       timestamp: new Date().toISOString(),
-      ...(validationErrors && { errors: validationErrors }),
-    });
+    };
+
+    if (!isProduction && error.stack) {
+      errorResponse.stack = error.stack;
+    }
+
+    if (validationErrors) {
+      errorResponse.errors = validationErrors;
+    }
+
+    reply.status(statusCode).send(errorResponse);
   });
 }
 

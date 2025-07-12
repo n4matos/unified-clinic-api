@@ -1,3 +1,4 @@
+import { isDatabaseError } from '../types/db.error';
 import { HttpError } from '../errors/http.error';
 import bcrypt from 'bcryptjs';
 import { DatabaseManager, TenantDbConfig } from '../config/db.config';
@@ -54,7 +55,11 @@ export class TenantService {
 
       return createdTenant;
     } catch (error) {
-      throw new HttpError(500, `Failed to create tenant: ${error}`);
+      if (isDatabaseError(error) && error.code === '23505') {
+        // Unique violation error code for PostgreSQL
+        throw new HttpError(409, `Tenant with this ID or Client ID already exists.`);
+      }
+      throw new HttpError(500, `Failed to create tenant: ${(error as Error).message}`);
     }
   }
 
@@ -96,7 +101,10 @@ export class TenantService {
       if (error instanceof HttpError) {
         throw error;
       }
-      throw new HttpError(500, `Failed to update tenant: ${error}`);
+      if (isDatabaseError(error) && error.code === '23505') {
+        throw new HttpError(409, `Tenant with this ID or Client ID already exists.`);
+      }
+      throw new HttpError(500, `Failed to update tenant: ${(error as Error).message}`);
     }
   }
 
