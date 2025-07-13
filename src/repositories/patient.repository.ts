@@ -172,7 +172,11 @@ export class PatientRepository {
    * @param cardNumber - Número da carteirinha
    * @returns Dados da fatura
    */
-  async getInvoiceReplacement(_tenantId: string, _cpf: string, _cardNumber: string): Promise<Invoice> {
+  async getInvoiceReplacement(
+    _tenantId: string,
+    _cpf: string,
+    _cardNumber: string
+  ): Promise<Invoice> {
     // Mock data - em produção, faria consulta no banco de dados do tenant
     return {
       barcode: '23791.12345 67890.123456 78901.234567 1 98765432101234',
