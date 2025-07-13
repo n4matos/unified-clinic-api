@@ -55,7 +55,7 @@ Isso permite máxima flexibilidade, permitindo que cada tenant use o tipo de ban
 
 - `src/plugins/errorHandler.ts`: Plugin de tratamento centralizado de erros com formatação padronizada.
 - `src/errors/http.error.ts`: Classe customizada para erros HTTP com códigos de status apropriados.
-- `src/types/fastify-custom.d.ts`: Extensões de tipos TypeScript para decorações customizadas do Fastify.
+- `src/types/fastify.d.ts`: Extensões de tipos TypeScript para decorações customizadas do Fastify.
 
 #### Scripts e Configuração
 

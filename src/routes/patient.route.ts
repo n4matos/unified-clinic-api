@@ -1,8 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { Static, Type } from '@sinclair/typebox';
-import { RegistrationDataService } from '../services/registration_data.service';
-import { InvoiceService } from '../services/invoice.service';
 import { RegistrationData, Invoice, InvoiceStatus } from '../types/patient.types';
 
 // Schemas for Registration Data Query (Consulta de dados cadastrais)
@@ -66,8 +64,7 @@ const GuideStatusResponse = Type.Object({
 type GuideStatusResponseType = Static<typeof GuideStatusResponse>;
 
 export default fp(async (app: FastifyInstance) => {
-  const registrationDataService = app.registrationDataService;
-  const invoiceService = app.invoiceService;
+  const patientService = app.patientService;
 
   // Endpoint: Registration Data Query (Consulta de dados cadastrais)
   app.post<{ Body: RegistrationDataQueryBodyType; Reply: RegistrationDataQueryResponseType }>(
@@ -84,11 +81,7 @@ export default fp(async (app: FastifyInstance) => {
     async (request, reply) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { cpf, cardNumber } = request.body;
-      const registrationData = await registrationDataService.getRegistrationData(
-        tenantId,
-        cpf,
-        cardNumber
-      );
+      const registrationData = await patientService.getRegistrationData(tenantId, cpf, cardNumber);
       return reply.send(registrationData);
     }
   );
@@ -111,7 +104,7 @@ export default fp(async (app: FastifyInstance) => {
     async (request, reply) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { cpf, cardNumber } = request.body;
-      const invoice = await invoiceService.getReplacementInvoice(tenantId, cpf, cardNumber);
+      const invoice = await patientService.getInvoiceReplacement(tenantId, cpf, cardNumber);
       return reply.send(invoice);
     }
   );
@@ -134,7 +127,7 @@ export default fp(async (app: FastifyInstance) => {
     async (request, reply) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { authorizationPassword } = request.body;
-      const status = await invoiceService.getInvoiceStatus(tenantId, authorizationPassword);
+      const status = await patientService.getGuideStatus(tenantId, authorizationPassword);
       return reply.send(status);
     }
   );

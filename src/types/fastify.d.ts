@@ -1,13 +1,18 @@
 // Fastify instance extensions and module declarations
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { Knex } from 'knex';
 import { DbPool } from '../config/db.config';
 import { ProfessionalService } from '../services/professional.service';
-import { RegistrationDataService } from '../services/registration_data.service';
-import { InvoiceService } from '../services/invoice.service';
+import { PatientService } from '../services/patient.service';
 
 declare module 'fastify' {
   interface FastifyInstance {
+    // Database decorators
+    configDb: Knex;
+    getConfigDb(): Knex;
+    isConfigDbHealthy(): Promise<boolean>;
+
     // Multi-tenancy decorators
     getDbPool: (tenantId: string) => Promise<DbPool>;
     getTenantStats: () => {
@@ -17,13 +22,15 @@ declare module 'fastify' {
       failedTenants: string[];
     };
 
+    // Compatibility (deprecated)
+    failedTenantInitializations: string[];
+
     // Authentication decorator
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 
     // Service decorators
     professionalService: ProfessionalService;
-    registrationDataService: RegistrationDataService;
-    invoiceService: InvoiceService;
+    patientService: PatientService;
   }
 
   interface FastifyRequest {
