@@ -204,5 +204,3 @@ export class LoggerService {
 export function createLogger(baseLogger: FastifyBaseLogger, context?: LogContext): LoggerService {
   return new LoggerService(baseLogger, context);
 }
-
-
