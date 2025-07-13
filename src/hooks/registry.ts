@@ -5,17 +5,10 @@ export class HookRegistry {
    * Registra hooks de logging e monitoramento
    */
   static registerLoggingHooks(app: FastifyInstance): void {
-    // Hook para log de conclusão de requisição
-    app.addHook('onResponse', (req, rep, done) => {
-      req.log.info(
-        {
-          statusCode: rep.statusCode,
-          resTime: `${rep.elapsedTime.toFixed(1)}ms`,
-        },
-        'request completed'
-      );
-      done();
-    });
+    // O Fastify já faz log automático de request/response
+    // Removemos o hook customizado para evitar duplicação
+    // Aqui podemos adicionar hooks personalizados específicos se necessário
+    // Por exemplo: logs de auditoria, métricas customizadas, etc.
   }
 
   /**

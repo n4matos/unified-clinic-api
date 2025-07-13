@@ -5,8 +5,8 @@ import { RegistrationData, Invoice, InvoiceStatus } from '../types/patient.types
 
 // Schemas for Registration Data Query (Consulta de dados cadastrais)
 const RegistrationDataQueryBody = Type.Object({
-  cpf: Type.String(),
-  cardNumber: Type.String(),
+  cpf: Type.Optional(Type.String()),
+  cardNumber: Type.Optional(Type.String()),
 });
 type RegistrationDataQueryBodyType = Static<typeof RegistrationDataQueryBody>;
 
@@ -32,6 +32,11 @@ const RegistrationDataQueryResponse = Type.Object({
   email: Type.Optional(Type.String()),
 });
 type RegistrationDataQueryResponseType = Static<typeof RegistrationDataQueryResponse>;
+
+const ErrorResponse = Type.Object({
+  message: Type.String(),
+});
+type ErrorResponseType = Static<typeof ErrorResponse>;
 
 // Schemas for Invoice Replacement (Segunda via de boleto)
 const InvoiceReplacementBody = Type.Object({
@@ -67,7 +72,10 @@ export default fp(async (app: FastifyInstance) => {
   const patientService = app.patientService;
 
   // Endpoint: Registration Data Query (Consulta de dados cadastrais)
-  app.post<{ Body: RegistrationDataQueryBodyType; Reply: RegistrationDataQueryResponseType }>(
+  app.post<{
+    Body: RegistrationDataQueryBodyType;
+    Reply: RegistrationDataQueryResponseType | ErrorResponseType;
+  }>(
     '/patients/registration-data',
     {
       preHandler: [app.authenticate],
@@ -75,12 +83,21 @@ export default fp(async (app: FastifyInstance) => {
         body: RegistrationDataQueryBody,
         response: {
           200: RegistrationDataQueryResponse,
+          400: ErrorResponse,
         },
       },
     },
     async (request, reply) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { cpf, cardNumber } = request.body;
+
+      // Validação: pelo menos um dos campos deve ser informado
+      if (!cpf && !cardNumber) {
+        return reply.status(400).send({
+          message: 'Pelo menos um dos campos deve ser informado: cpf ou cardNumber',
+        });
+      }
+
       const registrationData = await patientService.getRegistrationData(tenantId, cpf, cardNumber);
       return reply.send(registrationData);
     }

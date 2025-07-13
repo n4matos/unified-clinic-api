@@ -18,7 +18,7 @@ export default fp(async (app: FastifyInstance) => {
 
   // Instantiate Services with their respective Repositories and Logger
   const professionalService = new ProfessionalService(professionalRepository);
-  const patientService = new PatientService(loggerService);
+  const patientService = new PatientService(patientRepository, loggerService, app);
 
   // Decorate Fastify instance with services
   app.decorate('loggerService', loggerService);

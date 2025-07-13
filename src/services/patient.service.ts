@@ -1,27 +1,30 @@
 import { PatientRepository } from '../repositories/patient.repository';
 import { RegistrationData, Invoice, InvoiceStatus } from '../types/patient.types';
 import { LoggerService, createLogger, maskSensitiveData } from './logger.service';
+import { FastifyInstance } from 'fastify';
 
 export class PatientService {
   private patientRepository: PatientRepository;
   private logger?: LoggerService;
+  private app?: FastifyInstance;
 
-  constructor(logger?: LoggerService) {
-    this.patientRepository = new PatientRepository();
+  constructor(patientRepository: PatientRepository, logger?: LoggerService, app?: FastifyInstance) {
+    this.patientRepository = patientRepository;
     this.logger = logger;
+    this.app = app;
   }
 
   /**
    * Consulta de dados cadastrais
    * @param tenantId - ID do tenant
-   * @param cpf - CPF do paciente
-   * @param cardNumber - Número da carteirinha
+   * @param cpf - CPF do paciente (opcional)
+   * @param cardNumber - Número da carteirinha (opcional)
    * @returns Dados cadastrais do paciente
    */
   async getRegistrationData(
     tenantId: string,
-    cpf: string,
-    cardNumber: string
+    cpf?: string,
+    cardNumber?: string
   ): Promise<RegistrationData> {
     const startTime = Date.now();
     const logger = this.logger?.withTenant(tenantId);
@@ -34,7 +37,12 @@ export class PatientService {
     });
 
     try {
-      const result = await this.patientRepository.getRegistrationData(tenantId, cpf, cardNumber);
+      const result = await this.patientRepository.getRegistrationData(
+        tenantId,
+        cpf,
+        cardNumber,
+        this.app
+      );
 
       logger?.business('Patient registration data retrieved successfully', {
         operation: 'getRegistrationData',
