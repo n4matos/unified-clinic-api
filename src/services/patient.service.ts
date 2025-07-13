@@ -1,6 +1,6 @@
 import { PatientRepository } from '../repositories/patient.repository';
 import { RegistrationData, Invoice, InvoiceStatus } from '../types/patient.types';
-import { LoggerService, createLogger, maskSensitiveData } from './logger.service';
+import { LoggerService, maskSensitiveData } from './logger.service';
 import { FastifyInstance } from 'fastify';
 
 export class PatientService {

@@ -20,7 +20,7 @@ export interface LogContext {
   userId?: string;
   operationType?: string;
   correlationId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -48,8 +48,8 @@ export interface ErrorLogContext extends LogContext {
   context?: {
     method?: string;
     url?: string;
-    headers?: Record<string, any>;
-    body?: any;
+    headers?: Record<string, unknown>;
+    body?: unknown;
   };
 }
 
@@ -208,7 +208,7 @@ export function createLogger(baseLogger: FastifyBaseLogger, context?: LogContext
 /**
  * Helper para mascarar dados sensíveis em logs
  */
-export function maskSensitiveData(data: any): any {
+export function maskSensitiveData(data: unknown): unknown {
   if (typeof data === 'string') {
     // Mascarar CPF: 123.456.789-10 -> 123***
     if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(data)) {
@@ -223,7 +223,7 @@ export function maskSensitiveData(data: any): any {
   }
 
   if (typeof data === 'object' && data !== null) {
-    const masked = { ...data };
+    const masked = { ...data } as Record<string, unknown>;
     const sensitiveFields = ['cpf', 'password', 'secret', 'token', 'authorization'];
 
     for (const field of sensitiveFields) {

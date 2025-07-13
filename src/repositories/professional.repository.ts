@@ -35,8 +35,8 @@ export class ProfessionalRepository {
   ];
 
   async getProfessionalsByNetworkOption(
-    networkOption: string,
-    tenantId: string
+    _networkOption: string,
+    _tenantId: string
   ): Promise<Professional[]> {
     // In a real scenario, this would filter based on the networkOption and tenantId
     // For now, return all mocked professionals

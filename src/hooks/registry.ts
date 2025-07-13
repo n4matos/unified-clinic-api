@@ -4,7 +4,7 @@ export class HookRegistry {
   /**
    * Registra hooks de logging e monitoramento
    */
-  static registerLoggingHooks(app: FastifyInstance): void {
+  static registerLoggingHooks(_app: FastifyInstance): void {
     // O Fastify já faz log automático de request/response
     // Removemos o hook customizado para evitar duplicação
     // Aqui podemos adicionar hooks personalizados específicos se necessário

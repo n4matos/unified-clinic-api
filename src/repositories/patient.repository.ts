@@ -172,13 +172,13 @@ export class PatientRepository {
    * @param cardNumber - Número da carteirinha
    * @returns Dados da fatura
    */
-  async getInvoiceReplacement(tenantId: string, cpf: string, cardNumber: string): Promise<Invoice> {
+  async getInvoiceReplacement(_tenantId: string, _cpf: string, _cardNumber: string): Promise<Invoice> {
     // Mock data - em produção, faria consulta no banco de dados do tenant
     return {
       barcode: '23791.12345 67890.123456 78901.234567 1 98765432101234',
       amount: 150.75,
       expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias
-      contractCode: `CNT-${tenantId}-${cpf.slice(-4)}`,
+      contractCode: `CNT-${_tenantId}-${_cpf.slice(-4)}`,
     };
   }
 
@@ -188,7 +188,7 @@ export class PatientRepository {
    * @param authorizationPassword - Senha de autorização
    * @returns Status da guia
    */
-  async getGuideStatus(tenantId: string, authorizationPassword: string): Promise<InvoiceStatus> {
+  async getGuideStatus(_tenantId: string, _authorizationPassword: string): Promise<InvoiceStatus> {
     // Mock data - em produção, faria consulta no banco de dados do tenant
     const statuses: InvoiceStatus['status'][] = ['Authorized', 'Under Audit', 'Denied'];
     const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];

@@ -1,8 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { Static, Type } from '@sinclair/typebox';
-import { ProfessionalService } from '../services/professional.service';
-import { Professional } from '../types/guide.types';
 
 // Schemas for Medical Guide (Guia Médico)
 const MedicalGuideQuery = Type.Object({
