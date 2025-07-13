@@ -205,35 +205,4 @@ export function createLogger(baseLogger: FastifyBaseLogger, context?: LogContext
   return new LoggerService(baseLogger, context);
 }
 
-/**
- * Helper para mascarar dados sensíveis em logs
- */
-export function maskSensitiveData(data: unknown): unknown {
-  if (typeof data === 'string') {
-    // Mascarar CPF: 123.456.789-10 -> 123***
-    if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(data)) {
-      return data.substring(0, 3) + '***';
-    }
-    // Mascarar Email: user@domain.com -> u***@domain.com
-    if (data.includes('@')) {
-      const [local, domain] = data.split('@');
-      return local.substring(0, 1) + '***@' + domain;
-    }
-    return data;
-  }
 
-  if (typeof data === 'object' && data !== null) {
-    const masked = { ...data } as Record<string, unknown>;
-    const sensitiveFields = ['cpf', 'password', 'secret', 'token', 'authorization'];
-
-    for (const field of sensitiveFields) {
-      if (field in masked) {
-        masked[field] = '***';
-      }
-    }
-
-    return masked;
-  }
-
-  return data;
-}

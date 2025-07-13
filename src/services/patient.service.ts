@@ -1,6 +1,6 @@
 import { PatientRepository } from '../repositories/patient.repository';
 import { RegistrationData, Invoice, InvoiceStatus } from '../types/patient.types';
-import { LoggerService, maskSensitiveData } from './logger.service';
+import { LoggerService } from './logger.service';
 import { FastifyInstance } from 'fastify';
 
 export class PatientService {
@@ -32,7 +32,7 @@ export class PatientService {
     logger?.business('Fetching patient registration data', {
       operation: 'getRegistrationData',
       resource: 'patient',
-      resourceId: maskSensitiveData(cpf),
+      resourceId: cpf,
       tenantId,
     });
 
@@ -47,7 +47,7 @@ export class PatientService {
       logger?.business('Patient registration data retrieved successfully', {
         operation: 'getRegistrationData',
         resource: 'patient',
-        resourceId: maskSensitiveData(cpf),
+        resourceId: cpf,
         tenantId,
         duration: Date.now() - startTime,
         success: true,
@@ -58,7 +58,7 @@ export class PatientService {
       logger?.error('Failed to fetch patient registration data', error as Error, {
         operation: 'getRegistrationData',
         resource: 'patient',
-        resourceId: maskSensitiveData(cpf),
+        resourceId: cpf,
         tenantId,
         duration: Date.now() - startTime,
       });
@@ -80,7 +80,7 @@ export class PatientService {
     logger?.business('Generating invoice replacement', {
       operation: 'getInvoiceReplacement',
       resource: 'invoice',
-      resourceId: maskSensitiveData(cpf),
+      resourceId: cpf,
       tenantId,
     });
 
@@ -90,7 +90,7 @@ export class PatientService {
       logger?.business('Invoice replacement generated successfully', {
         operation: 'getInvoiceReplacement',
         resource: 'invoice',
-        resourceId: maskSensitiveData(cpf),
+        resourceId: cpf,
         tenantId,
         duration: Date.now() - startTime,
         success: true,
@@ -101,7 +101,7 @@ export class PatientService {
       logger?.error('Failed to generate invoice replacement', error as Error, {
         operation: 'getInvoiceReplacement',
         resource: 'invoice',
-        resourceId: maskSensitiveData(cpf),
+        resourceId: cpf,
         tenantId,
         duration: Date.now() - startTime,
       });
