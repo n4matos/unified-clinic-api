@@ -5,6 +5,7 @@ import { Knex } from 'knex';
 import { DbPool } from '../config/db.config';
 import { ProfessionalService } from '../services/professional.service';
 import { PatientService } from '../services/patient.service';
+import { LoggerService } from '../services/logger.service';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -31,6 +32,7 @@ declare module 'fastify' {
     // Service decorators
     professionalService: ProfessionalService;
     patientService: PatientService;
+    loggerService: LoggerService;
   }
 
   interface FastifyRequest {

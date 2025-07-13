@@ -32,13 +32,18 @@ export default fp(
 
         // Log apenas na primeira conexão (lazy loading)
         if (!lazyLoadedTenants.includes(tenantId)) {
-          app.log.info(`🔄 Lazy-loaded tenant: ${tenantId}`);
+          app.log.info({ tenantId }, `[${tenantId}] 🔄 Lazy-loaded tenant database connection`);
           lazyLoadedTenants.push(tenantId);
         }
 
         return pool;
       } catch (err) {
-        app.log.error({ err }, `❌ Failed to lazy-load tenant: ${tenantId}`);
+        app.log.error({ 
+          err, 
+          tenantId,
+          errorType: 'tenant_connection_failed',
+          timestamp: new Date().toISOString(),
+        }, `[${tenantId}] ❌ Failed to lazy-load tenant database`);
 
         // Registra falha apenas uma vez
         if (!failedTenantConnections.includes(tenantId)) {
