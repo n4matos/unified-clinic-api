@@ -38,12 +38,15 @@ export default fp(
 
         return pool;
       } catch (err) {
-        app.log.error({ 
-          err, 
-          tenantId,
-          errorType: 'tenant_connection_failed',
-          timestamp: new Date().toISOString(),
-        }, `[${tenantId}] ❌ Failed to lazy-load tenant database`);
+        app.log.error(
+          {
+            err,
+            tenantId,
+            errorType: 'tenant_connection_failed',
+            timestamp: new Date().toISOString(),
+          },
+          `[${tenantId}] ❌ Failed to lazy-load tenant database`
+        );
 
         // Registra falha apenas uma vez
         if (!failedTenantConnections.includes(tenantId)) {

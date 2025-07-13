@@ -21,11 +21,14 @@ export default fp(async (app) => {
     const authHeader = request.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      app.log.warn({ 
-        ip: request.ip,
-        userAgent: request.headers['user-agent'],
-        url: request.url,
-      }, 'Authentication failed - Missing or invalid authorization header');
+      app.log.warn(
+        {
+          ip: request.ip,
+          userAgent: request.headers['user-agent'],
+          url: request.url,
+        },
+        'Authentication failed - Missing or invalid authorization header'
+      );
       throw app.httpErrors.unauthorized('Authorization token is missing or invalid');
     }
 
@@ -52,32 +55,41 @@ export default fp(async (app) => {
       const tenant = await tenantService.getTenantByClientId(clientId);
 
       if (!tenant) {
-        app.log.warn({ 
-          clientId,
-          tenantId,
-          ip: request.ip,
-        }, `[${tenantId}] Authentication failed - Tenant not found or deactivated`);
+        app.log.warn(
+          {
+            clientId,
+            tenantId,
+            ip: request.ip,
+          },
+          `[${tenantId}] Authentication failed - Tenant not found or deactivated`
+        );
         throw app.httpErrors.forbidden('Tenant not found or deactivated');
       }
 
       // Verifica se o tenant_id no token corresponde ao tenant
       if (tenant.tenant_id !== tenantId) {
-        app.log.warn({ 
-          clientId,
-          tenantId,
-          expectedTenantId: tenant.tenant_id,
-          ip: request.ip,
-        }, `[${tenantId}] Authentication failed - Tenant ID mismatch in token`);
+        app.log.warn(
+          {
+            clientId,
+            tenantId,
+            expectedTenantId: tenant.tenant_id,
+            ip: request.ip,
+          },
+          `[${tenantId}] Authentication failed - Tenant ID mismatch in token`
+        );
         throw app.httpErrors.forbidden('Invalid tenant credentials in token');
       }
 
       // Log de autenticação bem-sucedida
-      app.log.debug({ 
-        clientId,
-        tenantId,
-        ip: request.ip,
-        userAgent: request.headers['user-agent'],
-      }, `[${tenantId}] Authentication successful`);
+      app.log.debug(
+        {
+          clientId,
+          tenantId,
+          ip: request.ip,
+          userAgent: request.headers['user-agent'],
+        },
+        `[${tenantId}] Authentication successful`
+      );
 
       request.tenantId = tenantId;
       request.clientId = clientId;
@@ -85,18 +97,24 @@ export default fp(async (app) => {
       request.clinicId = tenantId;
     } catch (error) {
       if (error instanceof jwt.JsonWebTokenError) {
-        app.log.warn({ 
-          error: error.message,
-          ip: request.ip,
-          userAgent: request.headers['user-agent'],
-        }, 'JWT verification failed - Invalid token');
+        app.log.warn(
+          {
+            error: error.message,
+            ip: request.ip,
+            userAgent: request.headers['user-agent'],
+          },
+          'JWT verification failed - Invalid token'
+        );
         throw app.httpErrors.unauthorized(`Invalid token: ${error.message}`);
       }
-      app.log.error({ 
-        error,
-        ip: request.ip,
-        userAgent: request.headers['user-agent'],
-      }, 'JWT verification failed - Internal error');
+      app.log.error(
+        {
+          error,
+          ip: request.ip,
+          userAgent: request.headers['user-agent'],
+        },
+        'JWT verification failed - Internal error'
+      );
       throw app.httpErrors.internalServerError('Internal server error');
     }
   });

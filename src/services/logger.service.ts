@@ -5,7 +5,7 @@ import { FastifyBaseLogger } from 'fastify';
  */
 export enum LogLevel {
   ERROR = 'error',
-  WARN = 'warn', 
+  WARN = 'warn',
   INFO = 'info',
   DEBUG = 'debug',
 }
@@ -162,7 +162,10 @@ export class LoggerService {
   /**
    * Log de performance para monitoramento
    */
-  performance(message: string, context: LogContext & { duration: number; operation: string }): void {
+  performance(
+    message: string,
+    context: LogContext & { duration: number; operation: string }
+  ): void {
     const perfContext = {
       ...this.defaultContext,
       ...context,
@@ -222,13 +225,13 @@ export function maskSensitiveData(data: any): any {
   if (typeof data === 'object' && data !== null) {
     const masked = { ...data };
     const sensitiveFields = ['cpf', 'password', 'secret', 'token', 'authorization'];
-    
+
     for (const field of sensitiveFields) {
       if (field in masked) {
         masked[field] = '***';
       }
     }
-    
+
     return masked;
   }
 

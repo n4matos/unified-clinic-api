@@ -25,7 +25,7 @@ export class PatientService {
   ): Promise<RegistrationData> {
     const startTime = Date.now();
     const logger = this.logger?.withTenant(tenantId);
-    
+
     logger?.business('Fetching patient registration data', {
       operation: 'getRegistrationData',
       resource: 'patient',
@@ -35,7 +35,7 @@ export class PatientService {
 
     try {
       const result = await this.patientRepository.getRegistrationData(tenantId, cpf, cardNumber);
-      
+
       logger?.business('Patient registration data retrieved successfully', {
         operation: 'getRegistrationData',
         resource: 'patient',
@@ -68,7 +68,7 @@ export class PatientService {
   async getInvoiceReplacement(tenantId: string, cpf: string, cardNumber: string): Promise<Invoice> {
     const startTime = Date.now();
     const logger = this.logger?.withTenant(tenantId);
-    
+
     logger?.business('Generating invoice replacement', {
       operation: 'getInvoiceReplacement',
       resource: 'invoice',
@@ -78,7 +78,7 @@ export class PatientService {
 
     try {
       const result = await this.patientRepository.getInvoiceReplacement(tenantId, cpf, cardNumber);
-      
+
       logger?.business('Invoice replacement generated successfully', {
         operation: 'getInvoiceReplacement',
         resource: 'invoice',
@@ -110,7 +110,7 @@ export class PatientService {
   async getGuideStatus(tenantId: string, authorizationPassword: string): Promise<InvoiceStatus> {
     const startTime = Date.now();
     const logger = this.logger?.withTenant(tenantId);
-    
+
     logger?.business('Checking guide status', {
       operation: 'getGuideStatus',
       resource: 'guide',
@@ -119,7 +119,7 @@ export class PatientService {
 
     try {
       const result = await this.patientRepository.getGuideStatus(tenantId, authorizationPassword);
-      
+
       logger?.business('Guide status retrieved successfully', {
         operation: 'getGuideStatus',
         resource: 'guide',
