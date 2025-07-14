@@ -1,7 +1,8 @@
-import { Professional } from '../types/app.d';
+import { FastifyInstance } from 'fastify';
+import { MedicalGuide } from '../types';
 
 export class ProfessionalRepository {
-  private mockedProfessionals: Professional[] = [
+  private mockedProfessionals: MedicalGuide[] = [
     {
       name: 'Dr. Ana Silva',
       specialty: 'Cardiologia',
@@ -34,12 +35,13 @@ export class ProfessionalRepository {
     },
   ];
 
-  async getProfessionalsByNetworkOption(
-    _networkOption: string,
-    _tenantId: string
-  ): Promise<Professional[]> {
-    // In a real scenario, this would filter based on the networkOption and tenantId
-    // For now, return all mocked professionals
+  async getMedicalInvoice(
+    tenantId: string,
+    networkOption: string,
+    app?: FastifyInstance
+  ): Promise<MedicalGuide[]> {
+    // const knex = await app.getDbPool(tenantId);
+    // return knex.select('*').from('professionals').where({ network_option: networkOption });
     return Promise.resolve(this.mockedProfessionals);
   }
 }

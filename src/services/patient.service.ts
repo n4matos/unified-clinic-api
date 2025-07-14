@@ -1,150 +1,41 @@
-import { PatientRepository } from '../repositories/patient.repository';
-import { RegistrationData, Invoice, InvoiceStatus } from '../types/patient.types';
-import { LoggerService } from './logger.service';
 import { FastifyInstance } from 'fastify';
+import { PatientAgentFactory } from '../agents/PatientAgentFactory';
+import { RegistrationData, Invoice, InvoiceStatus } from '../types';
+import { LoggerService } from './logger.service';
 
 export class PatientService {
-  private patientRepository: PatientRepository;
   private logger?: LoggerService;
-  private app?: FastifyInstance;
 
-  constructor(patientRepository: PatientRepository, logger?: LoggerService, app?: FastifyInstance) {
-    this.patientRepository = patientRepository;
+  constructor(logger?: LoggerService) {
     this.logger = logger;
-    this.app = app;
   }
 
-  /**
-   * Consulta de dados cadastrais
-   * @param tenantId - ID do tenant
-   * @param cpf - CPF do paciente (opcional)
-   * @param cardNumber - Número da carteirinha (opcional)
-   * @returns Dados cadastrais do paciente
-   */
   async getRegistrationData(
     tenantId: string,
+    app: FastifyInstance,
     cpf?: string,
     cardNumber?: string
-  ): Promise<RegistrationData> {
-    const startTime = Date.now();
-    const logger = this.logger?.withTenant(tenantId);
-
-    logger?.business('Fetching patient registration data', {
-      operation: 'getRegistrationData',
-      resource: 'patient',
-      resourceId: cpf,
-      tenantId,
-    });
-
-    try {
-      const result = await this.patientRepository.getRegistrationData(
-        tenantId,
-        cpf,
-        cardNumber,
-        this.app
-      );
-
-      logger?.business('Patient registration data retrieved successfully', {
-        operation: 'getRegistrationData',
-        resource: 'patient',
-        resourceId: cpf,
-        tenantId,
-        duration: Date.now() - startTime,
-        success: true,
-      });
-
-      return result;
-    } catch (error) {
-      logger?.error('Failed to fetch patient registration data', error as Error, {
-        operation: 'getRegistrationData',
-        resource: 'patient',
-        resourceId: cpf,
-        tenantId,
-        duration: Date.now() - startTime,
-      });
-      throw error;
-    }
+  ): Promise<RegistrationData | null> {
+    const agent = PatientAgentFactory.create(tenantId);
+    return agent.getRegistrationData(tenantId, app, cpf, cardNumber);
   }
 
-  /**
-   * Segunda via de boleto
-   * @param tenantId - ID do tenant
-   * @param cpf - CPF do paciente
-   * @param cardNumber - Número da carteirinha
-   * @returns Dados da fatura
-   */
-  async getInvoiceReplacement(tenantId: string, cpf: string, cardNumber: string): Promise<Invoice> {
-    const startTime = Date.now();
-    const logger = this.logger?.withTenant(tenantId);
-
-    logger?.business('Generating invoice replacement', {
-      operation: 'getInvoiceReplacement',
-      resource: 'invoice',
-      resourceId: cpf,
-      tenantId,
-    });
-
-    try {
-      const result = await this.patientRepository.getInvoiceReplacement(tenantId, cpf, cardNumber);
-
-      logger?.business('Invoice replacement generated successfully', {
-        operation: 'getInvoiceReplacement',
-        resource: 'invoice',
-        resourceId: cpf,
-        tenantId,
-        duration: Date.now() - startTime,
-        success: true,
-      });
-
-      return result;
-    } catch (error) {
-      logger?.error('Failed to generate invoice replacement', error as Error, {
-        operation: 'getInvoiceReplacement',
-        resource: 'invoice',
-        resourceId: cpf,
-        tenantId,
-        duration: Date.now() - startTime,
-      });
-      throw error;
-    }
+  async getInvoiceReplacement(
+    tenantId: string,
+    app: FastifyInstance,
+    cpf?: string,
+    cardNumber?: string
+  ): Promise<Invoice | null> {
+    const agent = PatientAgentFactory.create(tenantId);
+    return agent.getInvoiceReplacement(tenantId, app, cpf, cardNumber);
   }
 
-  /**
-   * Status da guia
-   * @param tenantId - ID do tenant
-   * @param authorizationPassword - Senha de autorização
-   * @returns Status da guia
-   */
-  async getGuideStatus(tenantId: string, authorizationPassword: string): Promise<InvoiceStatus> {
-    const startTime = Date.now();
-    const logger = this.logger?.withTenant(tenantId);
-
-    logger?.business('Checking guide status', {
-      operation: 'getGuideStatus',
-      resource: 'guide',
-      tenantId,
-    });
-
-    try {
-      const result = await this.patientRepository.getGuideStatus(tenantId, authorizationPassword);
-
-      logger?.business('Guide status retrieved successfully', {
-        operation: 'getGuideStatus',
-        resource: 'guide',
-        tenantId,
-        duration: Date.now() - startTime,
-        success: true,
-      });
-
-      return result;
-    } catch (error) {
-      logger?.error('Failed to check guide status', error as Error, {
-        operation: 'getGuideStatus',
-        resource: 'guide',
-        tenantId,
-        duration: Date.now() - startTime,
-      });
-      throw error;
-    }
+  async getGuideStatus(
+    tenantId: string,
+    app: FastifyInstance,
+    authorizationPassword?: string
+  ): Promise<InvoiceStatus | null> {
+    const agent = PatientAgentFactory.create(tenantId);
+    return agent.getGuideStatus(tenantId, app, authorizationPassword);
   }
 }

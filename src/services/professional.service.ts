@@ -1,19 +1,18 @@
-import { Professional } from '../types/app.d';
-import { ProfessionalRepository } from '../repositories/professional.repository';
+import { FastifyInstance } from 'fastify';
+import { MedicalGuide } from '../types';
+import { GuideAgentFactory } from '../agents/GuideAgentFactory';
 
 export class ProfessionalService {
-  private professionalRepository: ProfessionalRepository;
-
-  constructor(professionalRepository: ProfessionalRepository) {
-    this.professionalRepository = professionalRepository;
-  }
-
-  async getMedicalInvoice(tenantId: string, networkOption: string): Promise<Professional[]> {
-    // Add business logic validation here
+  async getMedicalInvoice(
+    tenantId: string,
+    networkOption: string,
+    app: FastifyInstance
+  ): Promise<MedicalGuide[]> {
     if (!networkOption || networkOption.trim().length === 0) {
       throw new Error('Network option is required');
     }
 
-    return this.professionalRepository.getProfessionalsByNetworkOption(tenantId, networkOption);
+    const agent = GuideAgentFactory.create(tenantId);
+    return agent.getMedicalGuide(tenantId, networkOption, app);
   }
 }
