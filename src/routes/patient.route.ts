@@ -42,17 +42,7 @@ export default fp(async (app: FastifyInstance) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { cpf, cardNumber } = request.body;
 
-      // Validação: pelo menos um dos campos deve ser informado
-      if (!cpf && !cardNumber) {
-        return reply.status(400).send({
-          message: 'Pelo menos um dos campos deve ser informado: cpf ou cardNumber',
-        });
-      }
-
       const registrationData = await patientService.getRegistrationData(tenantId, app, cpf, cardNumber);
-      if (!registrationData) {
-        return reply.status(404).send({ message: 'Dados cadastrais não encontrados.' });
-      }
       return reply.send(registrationData);
     }
   );
@@ -77,9 +67,6 @@ export default fp(async (app: FastifyInstance) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { cpf, cardNumber } = request.body;
       const invoice = await patientService.getInvoiceReplacement(tenantId, app, cpf, cardNumber);
-      if (!invoice) {
-        return reply.status(404).send({ message: 'Segunda via de boleto não encontrada.' });
-      }
       return reply.send(invoice);
     }
   );
@@ -104,9 +91,6 @@ export default fp(async (app: FastifyInstance) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { authorizationPassword } = request.body;
       const status = await patientService.getGuideStatus(tenantId, app, authorizationPassword);
-      if (!status) {
-        return reply.status(404).send({ message: 'Status da guia não encontrado.' });
-      }
       return reply.send(status);
     }
   );

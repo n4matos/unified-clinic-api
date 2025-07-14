@@ -3,16 +3,7 @@ import fp from 'fastify-plugin';
 import jwt from 'jsonwebtoken';
 import { TenantService } from '../services/tenant.service';
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    clinicId?: string;
-    tenantId?: string;
-    clientId?: string;
-  }
-  interface FastifyInstance {
-    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
-  }
-}
+
 
 export default fp(async (app) => {
   const tenantService = new TenantService();

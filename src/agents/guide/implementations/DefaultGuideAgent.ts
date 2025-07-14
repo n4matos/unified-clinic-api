@@ -1,24 +1,25 @@
 import { FastifyInstance } from 'fastify';
 import { GuideAgent } from '../GuideAgent';
-import { ProfessionalRepository } from '../../../repositories/professional.repository';
+import { GuideRepository } from '../../../repositories/guide/GuideRepository';
+import { MockGuideRepository } from '../../../repositories/guide/implementations/MockGuideRepository';
 import { MedicalGuide } from '../../../types';
+import { HttpError } from '../../../errors/http.error';
 
 export class DefaultGuideAgent implements GuideAgent {
-  private professionalRepository: ProfessionalRepository;
+  private guideRepository: GuideRepository;
 
   constructor() {
-    this.professionalRepository = new ProfessionalRepository();
+    this.guideRepository = new MockGuideRepository();
   }
 
   async getMedicalGuide(
-    tenantId: string,
+    _tenantId: string,
     networkOption: string,
-    app?: FastifyInstance
+    _app?: FastifyInstance
   ): Promise<MedicalGuide[]> {
-    return this.professionalRepository.getMedicalInvoice(
-      tenantId,
-      networkOption,
-      app
-    );
+    if (!networkOption || networkOption.trim().length === 0) {
+      throw new HttpError(400, 'Network option is required');
+    }
+    return this.guideRepository.getMedicalGuide(_tenantId, networkOption, _app);
   }
 }

@@ -23,8 +23,7 @@ declare module 'fastify' {
       failedTenants: string[];
     };
 
-    // Compatibility (deprecated)
-    failedTenantInitializations: string[];
+    
 
     // Authentication decorator
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;

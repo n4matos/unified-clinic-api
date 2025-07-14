@@ -1,7 +1,8 @@
 import { FastifyInstance } from 'fastify';
-import { MedicalGuide } from '../types';
+import { MedicalGuide } from '../../../types/guide.types';
+import { GuideRepository } from '../GuideRepository';
 
-export class ProfessionalRepository {
+export class MockGuideRepository implements GuideRepository {
   private mockedProfessionals: MedicalGuide[] = [
     {
       name: 'Dr. Ana Silva',
@@ -35,13 +36,13 @@ export class ProfessionalRepository {
     },
   ];
 
-  async getMedicalInvoice(
-    tenantId: string,
-    networkOption: string,
-    app?: FastifyInstance
+  async getMedicalGuide(
+    _tenantId: string,
+    _networkOption: string,
+    _app?: FastifyInstance
   ): Promise<MedicalGuide[]> {
-    // const knex = await app.getDbPool(tenantId);
-    // return knex.select('*').from('professionals').where({ network_option: networkOption });
+    // const knex = await _app.getDbPool(_tenantId);
+    // return knex.select('*').from('professionals').where({ network_option: _networkOption });
     return Promise.resolve(this.mockedProfessionals);
   }
 }

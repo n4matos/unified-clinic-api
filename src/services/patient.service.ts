@@ -15,7 +15,7 @@ export class PatientService {
     app: FastifyInstance,
     cpf?: string,
     cardNumber?: string
-  ): Promise<RegistrationData | null> {
+  ): Promise<RegistrationData> {
     const agent = PatientAgentFactory.create(tenantId);
     return agent.getRegistrationData(tenantId, app, cpf, cardNumber);
   }
@@ -25,7 +25,7 @@ export class PatientService {
     app: FastifyInstance,
     cpf?: string,
     cardNumber?: string
-  ): Promise<Invoice | null> {
+  ): Promise<Invoice> {
     const agent = PatientAgentFactory.create(tenantId);
     return agent.getInvoiceReplacement(tenantId, app, cpf, cardNumber);
   }
@@ -34,7 +34,7 @@ export class PatientService {
     tenantId: string,
     app: FastifyInstance,
     authorizationPassword?: string
-  ): Promise<InvoiceStatus | null> {
+  ): Promise<InvoiceStatus> {
     const agent = PatientAgentFactory.create(tenantId);
     return agent.getGuideStatus(tenantId, app, authorizationPassword);
   }

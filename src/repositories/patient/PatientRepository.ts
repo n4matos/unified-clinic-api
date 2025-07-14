@@ -1,24 +1,24 @@
 import { FastifyInstance } from 'fastify';
-import { RegistrationData, Invoice, InvoiceStatus } from '../../types';
+import { RegistrationData, Invoice, InvoiceStatus } from '../../types/patient.types';
 
-export interface PatientAgent {
+export interface PatientRepository {
   getRegistrationData(
     tenantId: string,
-    app: FastifyInstance,
     cpf?: string,
-    cardNumber?: string
-  ): Promise<RegistrationData>;
+    cardNumber?: string,
+    app?: FastifyInstance
+  ): Promise<RegistrationData | null>;
 
   getInvoiceReplacement(
     tenantId: string,
     app: FastifyInstance,
     cpf?: string,
     cardNumber?: string
-  ): Promise<Invoice>;
+  ): Promise<Invoice | null>;
 
   getGuideStatus(
     tenantId: string,
     app: FastifyInstance,
     authorizationPassword?: string
-  ): Promise<InvoiceStatus>;
+  ): Promise<InvoiceStatus | null>;
 }

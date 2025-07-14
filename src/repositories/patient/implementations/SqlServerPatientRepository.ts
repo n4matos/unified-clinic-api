@@ -1,6 +1,7 @@
-import { RegistrationData, Invoice, InvoiceStatus } from '../types/patient.types';
+import { RegistrationData, Invoice, InvoiceStatus } from '../../../types/patient.types';
 import { Knex } from 'knex';
 import { FastifyInstance } from 'fastify';
+import { PatientRepository } from '../PatientRepository';
 
 interface QueryResult {
   pessoaId: number;
@@ -23,7 +24,7 @@ interface QueryResult {
   email?: string;
 }
 
-export class PatientRepository {
+export class SqlServerPatientRepository implements PatientRepository {
   /**
    * Consulta de dados cadastrais
    * @param tenantId - ID do tenant
@@ -33,19 +34,19 @@ export class PatientRepository {
    * @returns Dados cadastrais do paciente
    */
   async getRegistrationData(
-    tenantId: string,
+    _tenantId: string,
     cpf?: string,
-    cardNumber?: string,
+    _cardNumber?: string,
     app?: FastifyInstance
   ): Promise<RegistrationData | null> {
     // Se tivermos acesso ao app, podemos usar a conexão real
     if (app) {
       try {
-        const dbPool = await app.getDbPool(tenantId);
-        return await this.executeRealQuery(dbPool, cpf, cardNumber);
+        const dbPool = await app.getDbPool(_tenantId);
+        return await this.executeRealQuery(dbPool, cpf, _cardNumber);
       } catch (error) {
-        console.error(`Failed to get database connection for tenant ${tenantId}:`, error);
-        throw new Error(`Database connection failed for tenant ${tenantId}`);
+        console.error(`Failed to get database connection for tenant ${_tenantId}:`, error);
+        throw new Error(`Database connection failed for tenant ${_tenantId}`);
       }
     }
 
@@ -60,7 +61,7 @@ export class PatientRepository {
     knex: Knex,
     cpf?: string,
     cardNumber?: string
-  ): Promise<RegistrationData> {
+  ): Promise<RegistrationData | null> {
     // Query principal para buscar dados da pessoa
     const query = knex('dbo.Pessoa as p')
       .leftJoin('dbo.EnderecoPessoa as ep', function () {
@@ -129,7 +130,7 @@ export class PatientRepository {
     const results = (await query) as QueryResult[];
 
     if (!results || results.length === 0) {
-      throw new Error('Patient not found');
+      return null;
     }
 
     // Processar os resultados para o formato esperado
@@ -173,18 +174,18 @@ export class PatientRepository {
    * @returns Dados da fatura
    */
   async getInvoiceReplacement(
-    tenantId: string,
+    _tenantId: string,
     app: FastifyInstance,
     cpf?: string,
-    cardNumber?: string
+    _cardNumber?: string
   ): Promise<Invoice | null> {
-    // const knex = await app.getDbPool(tenantId);
+    // const knex = await app.getDbPool(_tenantId);
     // Implementar a lógica de busca da fatura aqui
     return {
       barcode: '23791.12345 67890.123456 78901.234567 1 98765432101234',
       amount: 150.75,
       expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias
-      contractCode: `CNT-${tenantId}-${cpf?.slice(-4)}`,
+      contractCode: `CNT-${_tenantId}-${cpf?.slice(-4)}`,
     };
   }
 
@@ -195,11 +196,11 @@ export class PatientRepository {
    * @returns Status da guia
    */
   async getGuideStatus(
-    tenantId: string,
-    app: FastifyInstance,
-    authorizationPassword?: string
+    _tenantId: string,
+    _app: FastifyInstance,
+    _authorizationPassword?: string
   ): Promise<InvoiceStatus | null> {
-    // const knex = await app.getDbPool(tenantId);
+    // const knex = await _app.getDbPool(_tenantId);
     // Implementar a lógica de busca do status da guia aqui
     const statuses: InvoiceStatus['status'][] = ['Authorized', 'Under Audit', 'Denied'];
     const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
