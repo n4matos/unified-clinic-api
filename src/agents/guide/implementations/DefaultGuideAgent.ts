@@ -18,7 +18,7 @@ export class DefaultGuideAgent implements GuideAgent {
     _app?: FastifyInstance
   ): Promise<MedicalGuide[]> {
     if (!networkOption || networkOption.trim().length === 0) {
-      throw new HttpError(400, 'Network option is required');
+      throw new HttpError(400, 'Network option is required', 'Bad Request');
     }
     return this.guideRepository.getMedicalGuide(_tenantId, networkOption, _app);
   }

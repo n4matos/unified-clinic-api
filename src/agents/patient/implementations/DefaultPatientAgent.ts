@@ -19,7 +19,7 @@ export class DefaultPatientAgent implements PatientAgent {
     cardNumber?: string
   ): Promise<RegistrationData> {
     if (!cpf && !cardNumber) {
-      throw new HttpError(400, 'Pelo menos um dos campos deve ser informado: cpf ou cardNumber');
+      throw new HttpError(400, 'Pelo menos um dos campos deve ser informado: cpf ou cardNumber', 'Bad Request');
     }
     const result = await this.patientRepository.getRegistrationData(
       tenantId,
@@ -28,7 +28,7 @@ export class DefaultPatientAgent implements PatientAgent {
       app
     );
     if (!result) {
-      throw new HttpError(404, 'Dados cadastrais não encontrados.');
+      throw new HttpError(404, 'Dados cadastrais não encontrados.', 'Not Found');
     }
     return result;
   }
@@ -46,7 +46,7 @@ export class DefaultPatientAgent implements PatientAgent {
       cardNumber
     );
     if (!result) {
-      throw new HttpError(404, 'Segunda via de boleto não encontrada.');
+      throw new HttpError(404, 'Segunda via de boleto não encontrada.', 'Not Found');
     }
     return result;
   }
@@ -62,7 +62,7 @@ export class DefaultPatientAgent implements PatientAgent {
       authorizationPassword
     );
     if (!result) {
-      throw new HttpError(404, 'Status da guia não encontrado.');
+      throw new HttpError(404, 'Status da guia não encontrado.', 'Not Found');
     }
     return result;
   }

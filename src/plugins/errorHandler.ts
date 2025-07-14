@@ -24,7 +24,7 @@ async function errorHandlerPlugin(app: FastifyInstance) {
     if (error instanceof HttpError) {
       statusCode = error.statusCode;
       message = error.message;
-      errorName = reply.raw.statusCode === 404 ? 'Not Found' : 'Bad Request'; // Default for HttpError, can be refined
+      errorName = error.errorName;
     } else if (error.validation) {
       statusCode = 400;
       message = 'Validation error';
