@@ -23,8 +23,6 @@ declare module 'fastify' {
       failedTenants: string[];
     };
 
-    
-
     // Authentication decorator
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 

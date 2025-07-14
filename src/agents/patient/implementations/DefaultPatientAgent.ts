@@ -19,14 +19,13 @@ export class DefaultPatientAgent implements PatientAgent {
     cardNumber?: string
   ): Promise<RegistrationData> {
     if (!cpf && !cardNumber) {
-      throw new HttpError(400, 'Pelo menos um dos campos deve ser informado: cpf ou cardNumber', 'Bad Request');
+      throw new HttpError(
+        400,
+        'Pelo menos um dos campos deve ser informado: cpf ou cardNumber',
+        'Bad Request'
+      );
     }
-    const result = await this.patientRepository.getRegistrationData(
-      tenantId,
-      cpf,
-      cardNumber,
-      app
-    );
+    const result = await this.patientRepository.getRegistrationData(tenantId, cpf, cardNumber, app);
     if (!result) {
       throw new HttpError(404, 'Dados cadastrais não encontrados.', 'Not Found');
     }

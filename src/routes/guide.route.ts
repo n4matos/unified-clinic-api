@@ -34,7 +34,11 @@ export default fp(async (app: FastifyInstance) => {
     async (request, reply) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { networkOption } = request.query;
-      const professionals = await professionalService.getMedicalInvoice(tenantId, networkOption, app);
+      const professionals = await professionalService.getMedicalInvoice(
+        tenantId,
+        networkOption,
+        app
+      );
       return reply.send(professionals);
     }
   );

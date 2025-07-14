@@ -42,7 +42,12 @@ export default fp(async (app: FastifyInstance) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { cpf, cardNumber } = request.body;
 
-      const registrationData = await patientService.getRegistrationData(tenantId, app, cpf, cardNumber);
+      const registrationData = await patientService.getRegistrationData(
+        tenantId,
+        app,
+        cpf,
+        cardNumber
+      );
       return reply.send(registrationData);
     }
   );

@@ -3,8 +3,6 @@ import fp from 'fastify-plugin';
 import jwt from 'jsonwebtoken';
 import { TenantService } from '../services/tenant.service';
 
-
-
 export default fp(async (app) => {
   const tenantService = new TenantService();
 
