@@ -53,7 +53,7 @@ export class DefaultPatientAgent implements PatientAgent {
   async getGuideStatus(
     tenantId: string,
     app: FastifyInstance,
-    authorizationPassword?: string
+    authorizationPassword: string
   ): Promise<InvoiceStatus> {
     const result = await this.patientRepository.getGuideStatus(
       tenantId,

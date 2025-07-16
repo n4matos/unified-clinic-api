@@ -197,16 +197,58 @@ export class SqlServerPatientRepository implements PatientRepository {
    */
   async getGuideStatus(
     _tenantId: string,
-    _app: FastifyInstance,
-    _authorizationPassword?: string
+    app: FastifyInstance,
+    authorizationPassword: string
   ): Promise<InvoiceStatus | null> {
-    // const knex = await _app.getDbPool(_tenantId);
-    // Implementar a lógica de busca do status da guia aqui
-    const statuses: InvoiceStatus['status'][] = ['Authorized', 'Under Audit', 'Denied'];
-    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+    if (!app) {
+      throw new Error('FastifyInstance is required for database access');
+    }
+
+    const knex = await app.getDbPool(_tenantId);
+
+    // Determinar qual campo usar para a senha de autorização
+    // Assumindo que authorizationPassword pode ser ss.Codigo ou ss.CodigoDocumento
+    const guide = await knex('dbo.SolicitacaoServico as ss')
+      .leftJoin('dbo.TipoSituacaoSolServico as tsss', 'ss.Situacao', 'tsss.Codigo')
+      .where('ss.Codigo', authorizationPassword)
+      .orWhere('ss.CodigoDocumento', authorizationPassword)
+      .select('tsss.Codigo as situacaoCodigo')
+      .first();
+
+    if (!guide) {
+      return null; // Guia não encontrada
+    }
+
+    let status: InvoiceStatus['status'];
+
+    switch (guide.situacaoCodigo) {
+      case 7:
+        status = 'Authorized';
+        break;
+      case 8:
+        status = 'Denied'; // Assumindo que 8 é Cancelado/Negado
+        break;
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+      case 5:
+      case 6:
+      case 9:
+      case 10:
+      case 11:
+      case 12:
+      case 13:
+      case 14:
+      case 15:
+        status = 'Under Audit';
+        break;
+      default:
+        status = 'Under Audit'; // Default para situações desconhecidas
+    }
 
     return {
-      status: randomStatus,
+      status: status,
     };
   }
 }

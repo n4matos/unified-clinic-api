@@ -1,12 +1,12 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
+import { Type, Static } from '@sinclair/typebox';
 import {
   // Request/Response schemas
   RegistrationDataQueryBody,
   RegistrationDataQueryResponse,
   InvoiceReplacementBody,
   InvoiceReplacementResponse,
-  GuideStatusBody,
   GuideStatusResponse,
   ErrorResponse,
   // Types
@@ -14,7 +14,6 @@ import {
   RegistrationDataQueryResponseType,
   InvoiceReplacementBodyType,
   InvoiceReplacementResponseType,
-  GuideStatusBodyType,
   GuideStatusResponseType,
   ErrorResponseType,
 } from '../schemas';
@@ -77,15 +76,17 @@ export default fp(async (app: FastifyInstance) => {
   );
 
   // Endpoint: Guide Status (Status da guia)
-  app.post<{
-    Body: GuideStatusBodyType;
+  app.get<{
+    Params: { authorizationPassword: string };
     Reply: GuideStatusResponseType | ErrorResponseType;
   }>(
-    '/patients/guide/status',
+    '/patients/guide/:authorizationPassword',
     {
       preHandler: [app.authenticate],
       schema: {
-        body: GuideStatusBody,
+        params: Type.Object({
+          authorizationPassword: Type.String(),
+        }),
         response: {
           200: GuideStatusResponse,
           400: ErrorResponse,
@@ -94,7 +95,7 @@ export default fp(async (app: FastifyInstance) => {
     },
     async (request, reply) => {
       const tenantId = request.tenantId!; // Extraído do JWT
-      const { authorizationPassword } = request.body;
+      const { authorizationPassword } = request.params;
       const status = await patientService.getGuideStatus(tenantId, app, authorizationPassword);
       return reply.send(status);
     }
