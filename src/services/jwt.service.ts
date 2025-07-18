@@ -17,7 +17,7 @@ export class JWTService {
     }
   }
 
-  static generateAccessToken(clientId: string, tenantId: string): string {
+  static generateAccessToken(clientId: string): string {
     const secret = config.jwt.secret;
     if (!secret) {
       throw new HttpError(500, 'JWT_SECRET is not configured', 'Internal Server Error');
@@ -28,7 +28,6 @@ export class JWTService {
 
     const payload: JWTPayload = {
       sub: clientId,
-      tenant_id: tenantId,
       iat: now,
       exp: now + expiresInSeconds,
       type: 'access',
@@ -37,7 +36,7 @@ export class JWTService {
     return jwt.sign(payload, secret);
   }
 
-  static generateRefreshToken(clientId: string, tenantId: string): string {
+  static generateRefreshToken(clientId: string): string {
     const secret = config.jwt.secret;
     if (!secret) {
       throw new HttpError(500, 'JWT_SECRET is not configured', 'Internal Server Error');
@@ -48,7 +47,6 @@ export class JWTService {
 
     const payload: JWTPayload = {
       sub: clientId,
-      tenant_id: tenantId,
       iat: now,
       exp: now + expiresInSeconds,
       type: 'refresh',

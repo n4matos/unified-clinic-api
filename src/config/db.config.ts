@@ -3,8 +3,6 @@ import { config } from '../config';
 
 export interface TenantDbConfig {
   tenant_id: string;
-  client_id: string;
-  client_secret: string;
   db_type: 'pg' | 'mssql' | 'mysql';
   db_host: string;
   db_port: number;
@@ -125,9 +123,6 @@ export class DatabaseManager {
     return this.configDb('tenants').select('*');
   }
 
-  async getTenantByClientId(clientId: string): Promise<TenantDbConfig | undefined> {
-    return this.configDb('tenants').where({ client_id: clientId }).first<TenantDbConfig>();
-  }
 
   async refreshTenantPool(tenantId: string): Promise<void> {
     // Remove do cache para forçar recarregar na próxima consulta

@@ -1,14 +1,16 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
-import { TenantService } from '../services/tenant.service';
+import { ClientService } from '../services/client.service';
 import { JWTService } from '../services/jwt.service';
 
 export default fp(async (app) => {
-  const tenantService = new TenantService();
+  const clientService = new ClientService(app);
 
   app.decorate('authenticate', async (request: FastifyRequest, _reply: FastifyReply) => {
     const authHeader = request.headers.authorization;
+    const clinicHeader = request.headers['x-clinic-id'] as string;
 
+    // 1. Verificar Authorization header
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       app.log.warn(
         {
@@ -21,12 +23,26 @@ export default fp(async (app) => {
       throw app.httpErrors.unauthorized('Authorization token is missing or invalid');
     }
 
+    // 2. Verificar X-Clinic-ID header (obrigatório)
+    if (!clinicHeader || !clinicHeader.trim()) {
+      app.log.warn(
+        {
+          ip: request.ip,
+          userAgent: request.headers['user-agent'],
+          url: request.url,
+        },
+        'Authentication failed - Missing X-Clinic-ID header'
+      );
+      throw app.httpErrors.badRequest('X-Clinic-ID header is required');
+    }
+
     const token = authHeader.split(' ')[1];
+    const clinicId = clinicHeader.trim();
 
     try {
+      // 3. Verificar token JWT
       const decoded = JWTService.verifyToken(token);
       
-      // Verificar se é um access token
       if (decoded.type !== 'access') {
         app.log.warn(
           {
@@ -39,52 +55,37 @@ export default fp(async (app) => {
       }
 
       const clientId = decoded.sub;
-      const tenantId = decoded.tenant_id;
 
-      // Verifica se o tenant ainda existe
-      const tenant = await tenantService.getTenantByClientId(clientId);
-
-      if (!tenant) {
+      // 4. Verificar se cliente pode acessar a clínica solicitada
+      const hasAccess = await clientService.validateTenantAccess(clientId, clinicId);
+      
+      if (!hasAccess) {
         app.log.warn(
           {
             clientId,
-            tenantId,
+            requestedClinic: clinicId,
             ip: request.ip,
           },
-          `[${tenantId}] Authentication failed - Tenant not found or deactivated`
+          `Access denied - Client ${clientId} cannot access clinic ${clinicId}`
         );
-        throw app.httpErrors.forbidden('Tenant not found or deactivated');
+        throw app.httpErrors.forbidden(`Access denied for clinic: ${clinicId}`);
       }
 
-      // Verifica se o tenant_id no token corresponde ao tenant
-      if (tenant.tenant_id !== tenantId) {
-        app.log.warn(
-          {
-            clientId,
-            tenantId,
-            expectedTenantId: tenant.tenant_id,
-            ip: request.ip,
-          },
-          `[${tenantId}] Authentication failed - Tenant ID mismatch in token`
-        );
-        throw app.httpErrors.forbidden('Invalid tenant credentials in token');
-      }
-
-      // Log de autenticação bem-sucedida
+      // 5. Log de autenticação bem-sucedida
       app.log.debug(
         {
           clientId,
-          tenantId,
+          clinicId,
           ip: request.ip,
           userAgent: request.headers['user-agent'],
         },
-        `[${tenantId}] Authentication successful`
+        `Authentication successful - Client ${clientId} accessing clinic ${clinicId}`
       );
 
-      request.tenantId = tenantId;
+      // 6. Definir contexto da requisição
+      request.tenantId = clinicId;  // ← Agora vem do header!
       request.clientId = clientId;
-      // Manter compatibilidade com código existente
-      request.clinicId = tenantId;
+      request.clinicId = clinicId;  // Compatibilidade
     } catch (error) {
       app.log.warn(
         {

@@ -18,46 +18,16 @@ export class TenantService {
     }
   }
 
-  async getTenantByClientId(clientId: string): Promise<TenantDbConfig | undefined> {
-    try {
-      return await this.dbManager.getTenantByClientId(clientId);
-    } catch (error) {
-      throw new HttpError(500, `Failed to fetch tenant: ${error}`);
-    }
-  }
-
-  async validateTenant(clientId: string, clientSecret: string): Promise<TenantDbConfig> {
-    const tenant = await this.getTenantByClientId(clientId);
-
-    if (!tenant) {
-      throw new HttpError(401, 'Invalid client credentials');
-    }
-
-    const isSecretValid = await bcrypt.compare(clientSecret, tenant.client_secret);
-    if (!isSecretValid) {
-      throw new HttpError(401, 'Invalid client credentials');
-    }
-
-    return tenant;
-  }
-
   async createTenant(tenantData: TenantDbConfig): Promise<TenantDbConfig> {
-    const hashedSecret = await bcrypt.hash(tenantData.client_secret, 10);
-
-    const tenantToCreate = {
-      ...tenantData,
-      client_secret: hashedSecret,
-    };
-
     try {
       const configDb = this.dbManager.getConfigDb();
-      const [createdTenant] = await configDb('tenants').insert(tenantToCreate).returning('*');
+      const [createdTenant] = await configDb('tenants').insert(tenantData).returning('*');
 
       return createdTenant;
     } catch (error) {
       if (isDatabaseError(error) && error.code === '23505') {
         // Unique violation error code for PostgreSQL
-        throw new HttpError(409, `Tenant with this ID or Client ID already exists.`);
+        throw new HttpError(409, `Tenant with this ID already exists.`);
       }
       throw new HttpError(500, `Failed to create tenant: ${(error as Error).message}`);
     }
@@ -69,11 +39,6 @@ export class TenantService {
   ): Promise<TenantDbConfig> {
     try {
       const configDb = this.dbManager.getConfigDb();
-
-      // Se está atualizando o client_secret, fazer hash
-      if (updateData.client_secret) {
-        updateData.client_secret = await bcrypt.hash(updateData.client_secret, 10);
-      }
 
       const [updatedTenant] = await configDb('tenants')
         .where({ tenant_id: tenantId })
@@ -102,7 +67,7 @@ export class TenantService {
         throw error;
       }
       if (isDatabaseError(error) && error.code === '23505') {
-        throw new HttpError(409, `Tenant with this ID or Client ID already exists.`);
+        throw new HttpError(409, `Tenant with this ID already exists.`);
       }
       throw new HttpError(500, `Failed to update tenant: ${(error as Error).message}`);
     }

@@ -1,6 +1,5 @@
 export interface JWTPayload {
   sub: string; // client_id
-  tenant_id: string;
   iat: number;
   exp: number;
   type: 'access' | 'refresh';
@@ -27,4 +26,21 @@ export interface RefreshTokenResponse {
   access_token: string;
   token_type: 'Bearer';
   expires_in: number; // em segundos
+}
+
+export interface Client {
+  id: string;
+  client_id: string;
+  client_secret: string;
+  name: string;
+  allowed_tenants: string[];
+  created_at: Date;
+  active: boolean;
+}
+
+export interface ClientCreateRequest {
+  client_id: string;
+  client_secret: string;
+  name: string;
+  allowed_tenants: string[];
 }

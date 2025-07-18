@@ -1,13 +1,13 @@
 import { HttpError } from '../errors/http.error';
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { TenantService } from '../services/tenant.service';
+import { ClientService } from '../services/client.service';
 import { RefreshTokenService } from '../services/refresh-token.service';
 import { JWTService } from '../services/jwt.service';
 import { LoginResponse, RefreshTokenResponse } from '../types/auth.types';
 
 export default fp(async (app: FastifyInstance) => {
-  const tenantService = new TenantService();
+  const clientService = new ClientService(app);
   const refreshTokenService = new RefreshTokenService(app);
 
   // Login route with client_id and client_secret
@@ -21,11 +21,11 @@ export default fp(async (app: FastifyInstance) => {
       throw new HttpError(400, 'client_id and client_secret are required');
     }
 
-    const tenant = await tenantService.validateTenant(client_id, client_secret);
+    const client = await clientService.validateClient(client_id, client_secret);
 
-    // Gerar access token e refresh token
-    const accessToken = JWTService.generateAccessToken(client_id, tenant.tenant_id);
-    const refreshToken = await refreshTokenService.createRefreshToken(client_id, tenant.tenant_id);
+    // Gerar access token e refresh token (SEM tenant_id)
+    const accessToken = JWTService.generateAccessToken(client_id);
+    const refreshToken = await refreshTokenService.createRefreshToken(client_id, 'multi_tenant');
     
     const response: LoginResponse = {
       access_token: accessToken,
@@ -37,10 +37,10 @@ export default fp(async (app: FastifyInstance) => {
     app.log.info(
       {
         clientId: client_id,
-        tenantId: tenant.tenant_id,
+        allowedClinics: client.allowed_tenants,
         ip: request.ip,
       },
-      `[${tenant.tenant_id}] User logged in successfully`
+      `Client ${client_id} logged in successfully (Access to: ${client.allowed_tenants.join(', ')})`
     );
 
     return reply.send(response);
@@ -60,11 +60,8 @@ export default fp(async (app: FastifyInstance) => {
       // Validar o refresh token
       const tokenData = await refreshTokenService.validateRefreshToken(refresh_token);
 
-      // Gerar novo access token
-      const newAccessToken = JWTService.generateAccessToken(
-        tokenData.client_id,
-        tokenData.tenant_id
-      );
+      // Gerar novo access token (SEM tenant_id)
+      const newAccessToken = JWTService.generateAccessToken(tokenData.client_id);
 
       const response: RefreshTokenResponse = {
         access_token: newAccessToken,
@@ -75,10 +72,9 @@ export default fp(async (app: FastifyInstance) => {
       app.log.info(
         {
           clientId: tokenData.client_id,
-          tenantId: tokenData.tenant_id,
           ip: request.ip,
         },
-        `[${tokenData.tenant_id}] Access token refreshed successfully`
+        `Access token refreshed successfully for client ${tokenData.client_id}`
       );
 
       return reply.send(response);
@@ -143,10 +139,9 @@ export default fp(async (app: FastifyInstance) => {
     app.log.info(
       {
         clientId: payload.sub,
-        tenantId: payload.tenant_id,
         ip: request.ip,
       },
-      `[${payload.tenant_id}] All sessions logged out successfully`
+      `All sessions logged out successfully for client ${payload.sub}`
     );
 
     return reply.send({ message: 'All sessions logged out successfully' });
