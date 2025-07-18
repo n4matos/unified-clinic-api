@@ -12,25 +12,23 @@ export class ClientService {
 
   async getAllClients(): Promise<Omit<Client, 'client_secret'>[]> {
     const knex = this.app.getConfigDb();
-    
+
     const clients = await knex('clients')
       .select('id', 'client_id', 'name', 'allowed_tenants', 'active', 'created_at')
       .where('active', true);
 
-    return clients.map(client => ({
+    return clients.map((client) => ({
       ...client,
-      allowed_tenants: Array.isArray(client.allowed_tenants) 
-        ? client.allowed_tenants 
-        : JSON.parse(client.allowed_tenants)
+      allowed_tenants: Array.isArray(client.allowed_tenants)
+        ? client.allowed_tenants
+        : JSON.parse(client.allowed_tenants),
     }));
   }
 
   async getClientByClientId(clientId: string): Promise<Client | null> {
     const knex = this.app.getConfigDb();
-    
-    const client = await knex('clients')
-      .where({ client_id: clientId, active: true })
-      .first();
+
+    const client = await knex('clients').where({ client_id: clientId, active: true }).first();
 
     if (!client) {
       return null;
@@ -40,7 +38,7 @@ export class ClientService {
       ...client,
       allowed_tenants: Array.isArray(client.allowed_tenants)
         ? client.allowed_tenants
-        : JSON.parse(client.allowed_tenants)
+        : JSON.parse(client.allowed_tenants),
     };
   }
 
@@ -63,9 +61,7 @@ export class ClientService {
     const knex = this.app.getConfigDb();
 
     // Verificar se client_id já existe
-    const existingClient = await knex('clients')
-      .where('client_id', data.client_id)
-      .first();
+    const existingClient = await knex('clients').where('client_id', data.client_id).first();
 
     if (existingClient) {
       throw new HttpError(409, 'Client with this ID already exists', 'Conflict');
@@ -77,15 +73,11 @@ export class ClientService {
       .pluck('tenant_id');
 
     const nonExistentTenants = data.allowed_tenants.filter(
-      tenant => !existingTenants.includes(tenant)
+      (tenant) => !existingTenants.includes(tenant)
     );
 
     if (nonExistentTenants.length > 0) {
-      throw new HttpError(
-        400, 
-        `Invalid tenants: ${nonExistentTenants.join(', ')}`, 
-        'Bad Request'
-      );
+      throw new HttpError(400, `Invalid tenants: ${nonExistentTenants.join(', ')}`, 'Bad Request');
     }
 
     // Hash da senha
@@ -100,18 +92,18 @@ export class ClientService {
         allowed_tenants: JSON.stringify(data.allowed_tenants),
         active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       })
       .returning(['id', 'client_id', 'name', 'allowed_tenants', 'active', 'created_at']);
 
     return {
       ...createdClient,
-      allowed_tenants: data.allowed_tenants
+      allowed_tenants: data.allowed_tenants,
     };
   }
 
   async updateClient(
-    clientId: string, 
+    clientId: string,
     updates: Partial<ClientCreateRequest>
   ): Promise<Omit<Client, 'client_secret'>> {
     const knex = this.app.getConfigDb();
@@ -133,7 +125,7 @@ export class ClientService {
         .pluck('tenant_id');
 
       const nonExistentTenants = updates.allowed_tenants.filter(
-        tenant => !existingTenants.includes(tenant)
+        (tenant) => !existingTenants.includes(tenant)
       );
 
       if (nonExistentTenants.length > 0) {
@@ -150,7 +142,15 @@ export class ClientService {
     const [updatedClient] = await knex('clients')
       .where({ client_id: clientId, active: true })
       .update(updateData)
-      .returning(['id', 'client_id', 'name', 'allowed_tenants', 'active', 'created_at', 'updated_at']);
+      .returning([
+        'id',
+        'client_id',
+        'name',
+        'allowed_tenants',
+        'active',
+        'created_at',
+        'updated_at',
+      ]);
 
     if (!updatedClient) {
       throw new HttpError(404, 'Client not found', 'Not Found');
@@ -160,19 +160,17 @@ export class ClientService {
       ...updatedClient,
       allowed_tenants: Array.isArray(updatedClient.allowed_tenants)
         ? updatedClient.allowed_tenants
-        : JSON.parse(updatedClient.allowed_tenants)
+        : JSON.parse(updatedClient.allowed_tenants),
     };
   }
 
   async deactivateClient(clientId: string): Promise<void> {
     const knex = this.app.getConfigDb();
 
-    const result = await knex('clients')
-      .where({ client_id: clientId, active: true })
-      .update({ 
-        active: false, 
-        updated_at: new Date() 
-      });
+    const result = await knex('clients').where({ client_id: clientId, active: true }).update({
+      active: false,
+      updated_at: new Date(),
+    });
 
     if (result === 0) {
       throw new HttpError(404, 'Client not found', 'Not Found');
@@ -181,7 +179,7 @@ export class ClientService {
 
   async validateTenantAccess(clientId: string, tenantId: string): Promise<boolean> {
     const client = await this.getClientByClientId(clientId);
-    
+
     if (!client) {
       return false;
     }

@@ -12,19 +12,17 @@ export class RefreshTokenService {
 
   async createRefreshToken(clientId: string, context: string = 'multi_tenant'): Promise<string> {
     const knex = this.app.getConfigDb();
-    
+
     // Gerar token único
     const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    
+
     // Calcular data de expiração (7 dias)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
     // Revogar tokens existentes para este cliente
-    await knex('refresh_tokens')
-      .where({ client_id: clientId })
-      .update({ revoked: true });
+    await knex('refresh_tokens').where({ client_id: clientId }).update({ revoked: true });
 
     // Inserir novo token
     await knex('refresh_tokens').insert({
@@ -63,24 +61,18 @@ export class RefreshTokenService {
     const knex = this.app.getConfigDb();
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-    await knex('refresh_tokens')
-      .where({ token_hash: tokenHash })
-      .update({ revoked: true });
+    await knex('refresh_tokens').where({ token_hash: tokenHash }).update({ revoked: true });
   }
 
   async revokeAllRefreshTokens(clientId: string): Promise<void> {
     const knex = this.app.getConfigDb();
 
-    await knex('refresh_tokens')
-      .where({ client_id: clientId })
-      .update({ revoked: true });
+    await knex('refresh_tokens').where({ client_id: clientId }).update({ revoked: true });
   }
 
   async cleanupExpiredTokens(): Promise<void> {
     const knex = this.app.getConfigDb();
 
-    await knex('refresh_tokens')
-      .where('expires_at', '<', new Date())
-      .del();
+    await knex('refresh_tokens').where('expires_at', '<', new Date()).del();
   }
 }

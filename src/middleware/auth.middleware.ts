@@ -42,7 +42,7 @@ export default fp(async (app) => {
     try {
       // 3. Verificar token JWT
       const decoded = JWTService.verifyToken(token);
-      
+
       if (decoded.type !== 'access') {
         app.log.warn(
           {
@@ -58,7 +58,7 @@ export default fp(async (app) => {
 
       // 4. Verificar se cliente pode acessar a clínica solicitada
       const hasAccess = await clientService.validateTenantAccess(clientId, clinicId);
-      
+
       if (!hasAccess) {
         app.log.warn(
           {
@@ -83,9 +83,9 @@ export default fp(async (app) => {
       );
 
       // 6. Definir contexto da requisição
-      request.tenantId = clinicId;  // ← Agora vem do header!
+      request.tenantId = clinicId; // ← Agora vem do header!
       request.clientId = clientId;
-      request.clinicId = clinicId;  // Compatibilidade
+      request.clinicId = clinicId; // Compatibilidade
     } catch (error) {
       app.log.warn(
         {
@@ -95,7 +95,7 @@ export default fp(async (app) => {
         },
         'JWT verification failed'
       );
-      
+
       // Re-throw the error as-is since JWTService already handles error types properly
       if (error instanceof Error && error.message.includes('Invalid token')) {
         throw app.httpErrors.unauthorized(error.message);

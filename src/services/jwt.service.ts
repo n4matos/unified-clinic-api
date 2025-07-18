@@ -8,12 +8,16 @@ export class JWTService {
     // Converte formato "15m", "1h", "7d" para segundos
     const unit = expiresIn.slice(-1);
     const value = parseInt(expiresIn.slice(0, -1));
-    
+
     switch (unit) {
-      case 'm': return value * 60; // minutos
-      case 'h': return value * 60 * 60; // horas
-      case 'd': return value * 24 * 60 * 60; // dias
-      default: throw new Error(`Invalid expires format: ${expiresIn}`);
+      case 'm':
+        return value * 60; // minutos
+      case 'h':
+        return value * 60 * 60; // horas
+      case 'd':
+        return value * 24 * 60 * 60; // dias
+      default:
+        throw new Error(`Invalid expires format: ${expiresIn}`);
     }
   }
 

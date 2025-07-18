@@ -123,7 +123,6 @@ export class DatabaseManager {
     return this.configDb('tenants').select('*');
   }
 
-
   async refreshTenantPool(tenantId: string): Promise<void> {
     // Remove do cache para forçar recarregar na próxima consulta
     const existingPool = this.tenantPools.get(tenantId);

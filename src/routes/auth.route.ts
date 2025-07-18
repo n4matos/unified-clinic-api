@@ -26,7 +26,7 @@ export default fp(async (app: FastifyInstance) => {
     // Gerar access token e refresh token (SEM tenant_id)
     const accessToken = JWTService.generateAccessToken(client_id);
     const refreshToken = await refreshTokenService.createRefreshToken(client_id, 'multi_tenant');
-    
+
     const response: LoginResponse = {
       access_token: accessToken,
       refresh_token: refreshToken,
@@ -102,7 +102,7 @@ export default fp(async (app: FastifyInstance) => {
 
     try {
       await refreshTokenService.revokeRefreshToken(refresh_token);
-      
+
       app.log.info(
         {
           ip: request.ip,
@@ -126,7 +126,7 @@ export default fp(async (app: FastifyInstance) => {
   // Logout de todos os dispositivos (revoga todos os refresh tokens do cliente)
   app.post('/auth/logout-all', async (request, reply) => {
     const authHeader = request.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new HttpError(401, 'Authorization token is required', 'Unauthorized');
     }
@@ -135,7 +135,7 @@ export default fp(async (app: FastifyInstance) => {
     const payload = JWTService.verifyToken(token);
 
     await refreshTokenService.revokeAllRefreshTokens(payload.sub);
-    
+
     app.log.info(
       {
         clientId: payload.sub,
