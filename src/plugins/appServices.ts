@@ -4,6 +4,7 @@ import fp from 'fastify-plugin';
 import { ProfessionalService } from '../services/professional.service';
 import { PatientService } from '../services/patient.service';
 import { LoggerService } from '../services/logger.service';
+import { RefreshTokenService } from '../services/refresh-token.service';
 
 export default fp(async (app: FastifyInstance) => {
   // Create logger service
@@ -12,9 +13,11 @@ export default fp(async (app: FastifyInstance) => {
   // Instantiate Services
   const professionalService = new ProfessionalService();
   const patientService = new PatientService(loggerService);
+  const refreshTokenService = new RefreshTokenService(app);
 
   // Decorate Fastify instance with services
   app.decorate('loggerService', loggerService);
   app.decorate('professionalService', professionalService);
   app.decorate('patientService', patientService);
+  app.decorate('refreshTokenService', refreshTokenService);
 });

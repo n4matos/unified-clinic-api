@@ -11,6 +11,9 @@ import appServices from '../plugins/appServices';
 // Middleware
 import authMiddleware from '../middleware/auth.middleware';
 
+// Hooks
+import { HookRegistry } from '../hooks/registry';
+
 // Rotas
 import authRoutes from '../routes/auth.route';
 import healthRoutes from '../routes/health.route';
@@ -65,5 +68,12 @@ export class PluginRegistry {
     // Rotas que requerem autenticação
     await app.register(patientRoutes);
     await app.register(guideRoutes);
+  }
+
+  /**
+   * Registra hooks de manutenção automática
+   */
+  static async registerMaintenanceHooks(app: FastifyInstance): Promise<void> {
+    await HookRegistry.registerMaintenanceHooks(app);
   }
 }

@@ -28,6 +28,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Registro de hooks
   HookRegistry.registerLoggingHooks(app);
+  await PluginRegistry.registerMaintenanceHooks(app);
 
   return app;
 }

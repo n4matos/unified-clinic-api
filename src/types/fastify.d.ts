@@ -6,6 +6,7 @@ import { DbPool } from '../config/db.config';
 import { ProfessionalService } from '../services/professional.service';
 import { PatientService } from '../services/patient.service';
 import { LoggerService } from '../services/logger.service';
+import { RefreshTokenService } from '../services/refresh-token.service';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -30,6 +31,7 @@ declare module 'fastify' {
     professionalService: ProfessionalService;
     patientService: PatientService;
     loggerService: LoggerService;
+    refreshTokenService: RefreshTokenService;
   }
 
   interface FastifyRequest {

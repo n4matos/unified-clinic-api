@@ -1,7 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
-import jwt from 'jsonwebtoken';
 import { TenantService } from '../services/tenant.service';
+import { JWTService } from '../services/jwt.service';
 
 export default fp(async (app) => {
   const tenantService = new TenantService();
@@ -22,20 +22,21 @@ export default fp(async (app) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const secret = process.env.JWT_SECRET;
-
-    if (!secret) {
-      app.log.error('JWT_SECRET is not defined');
-      throw app.httpErrors.internalServerError('Server configuration error');
-    }
 
     try {
-      const decoded = jwt.verify(token, secret) as {
-        sub: string;
-        tenant_id: string;
-        iat: number;
-        exp: number;
-      };
+      const decoded = JWTService.verifyToken(token);
+      
+      // Verificar se é um access token
+      if (decoded.type !== 'access') {
+        app.log.warn(
+          {
+            tokenType: decoded.type,
+            ip: request.ip,
+          },
+          'Invalid token type for authentication'
+        );
+        throw app.httpErrors.unauthorized('Invalid token type');
+      }
 
       const clientId = decoded.sub;
       const tenantId = decoded.tenant_id;
@@ -85,26 +86,20 @@ export default fp(async (app) => {
       // Manter compatibilidade com código existente
       request.clinicId = tenantId;
     } catch (error) {
-      if (error instanceof jwt.JsonWebTokenError) {
-        app.log.warn(
-          {
-            error: error.message,
-            ip: request.ip,
-            userAgent: request.headers['user-agent'],
-          },
-          'JWT verification failed - Invalid token'
-        );
-        throw app.httpErrors.unauthorized(`Invalid token: ${error.message}`);
-      }
-      app.log.error(
+      app.log.warn(
         {
-          error,
+          error: error instanceof Error ? error.message : 'Unknown error',
           ip: request.ip,
           userAgent: request.headers['user-agent'],
         },
-        'JWT verification failed - Internal error'
+        'JWT verification failed'
       );
-      throw app.httpErrors.internalServerError('Internal server error');
+      
+      // Re-throw the error as-is since JWTService already handles error types properly
+      if (error instanceof Error && error.message.includes('Invalid token')) {
+        throw app.httpErrors.unauthorized(error.message);
+      }
+      throw app.httpErrors.internalServerError('Token verification failed');
     }
   });
 });
