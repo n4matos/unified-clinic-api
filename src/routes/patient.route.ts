@@ -26,7 +26,7 @@ export default fp(async (app: FastifyInstance) => {
     Body: RegistrationDataQueryBodyType;
     Reply: RegistrationDataQueryResponseType | ErrorResponseType;
   }>(
-    '/patients/registration-data',
+    '/registration-data',
     {
       preHandler: [app.authenticate],
       schema: {
@@ -56,7 +56,7 @@ export default fp(async (app: FastifyInstance) => {
     Body: InvoiceReplacementBodyType;
     Reply: InvoiceReplacementResponseType | ErrorResponseType;
   }>(
-    '/patients/invoices',
+    '/invoices',
     {
       preHandler: [app.authenticate],
       schema: {
@@ -80,7 +80,7 @@ export default fp(async (app: FastifyInstance) => {
     Params: { authorizationPassword: string };
     Reply: GuideStatusResponseType | ErrorResponseType;
   }>(
-    '/patients/guide/:authorizationPassword',
+    '/guide/:authorizationPassword',
     {
       preHandler: [app.authenticate],
       schema: {

@@ -17,7 +17,7 @@ export default fp(async (app: FastifyInstance) => {
     Querystring: MedicalGuideQueryType;
     Reply: MedicalGuidePaginatedResponseType | ErrorResponseType;
   }>(
-    '/guide/medical',
+    '/medical',
     {
       preHandler: [app.authenticate],
       schema: {

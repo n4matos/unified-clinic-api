@@ -66,8 +66,8 @@ export class PluginRegistry {
    */
   static async registerProtectedRoutes(app: FastifyInstance): Promise<void> {
     // Rotas que requerem autenticação
-    await app.register(patientRoutes);
-    await app.register(guideRoutes);
+    await app.register(patientRoutes, { prefix: '/patients' });
+    await app.register(guideRoutes, { prefix: '/guide' });
   }
 
   /**
