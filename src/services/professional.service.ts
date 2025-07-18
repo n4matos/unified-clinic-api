@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { MedicalGuide } from '../types';
+import { MedicalGuidePaginatedResponse } from '../types';
 import { GuideAgentFactory } from '../agents/GuideAgentFactory';
 import { LoggerService } from './logger.service';
 
@@ -13,8 +13,10 @@ export class ProfessionalService {
   async getMedicalInvoice(
     tenantId: string,
     networkOption: string,
+    page: number = 1,
+    limit: number = 10,
     app: FastifyInstance
-  ): Promise<MedicalGuide[]> {
+  ): Promise<MedicalGuidePaginatedResponse> {
     const startTime = Date.now();
     const logger = this.logger?.withTenant(tenantId);
 
@@ -23,11 +25,13 @@ export class ProfessionalService {
       resource: 'medicalGuide',
       tenantId,
       networkOption,
+      page,
+      limit,
     });
 
     try {
       const agent = GuideAgentFactory.create(tenantId);
-      const result = await agent.getMedicalGuide(tenantId, networkOption, app);
+      const result = await agent.getMedicalGuide(tenantId, networkOption, page, limit, app);
 
       logger?.business('Medical guide retrieved successfully', {
         operation: 'getMedicalInvoice',

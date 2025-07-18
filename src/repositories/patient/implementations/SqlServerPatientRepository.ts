@@ -78,9 +78,7 @@ export class SqlServerPatientRepository implements PatientRepository {
       })
       .leftJoin('dbo.TipoTelefone as tt', 'tp.Tipo', 'tt.Codigo')
       .leftJoin('dbo.EmailPessoa as emp', function () {
-        this.on('p.AutoId', '=', 'emp.Pessoa')
-          .andOnNull('emp.FimVigencia')
-          .andOn('emp.EnviarEmail', '=', knex.raw('1'));
+        this.on('p.AutoId', '=', 'emp.Pessoa').andOnNull('emp.FimVigencia');
       })
       .select([
         // Dados da pessoa
@@ -149,7 +147,7 @@ export class SqlServerPatientRepository implements PatientRepository {
     const registrationData: RegistrationData = {
       activeAddress: patient.enderecoId
         ? {
-            type: patient.addressType === 1 ? 'Residential' : 'Commercial',
+            type: patient.addressType === 1 ? 'Residencial' : 'Comercial',
             street: patient.street || '',
             number: patient.number || '',
             complement: patient.complement || undefined,
@@ -206,45 +204,52 @@ export class SqlServerPatientRepository implements PatientRepository {
 
     const knex = await app.getDbPool(_tenantId);
 
-    // Determinar qual campo usar para a senha de autorização
-    // Assumindo que authorizationPassword pode ser ss.Codigo ou ss.CodigoDocumento
-    const guide = await knex('dbo.SolicitacaoServico as ss')
-      .leftJoin('dbo.TipoSituacaoSolServico as tsss', 'ss.Situacao', 'tsss.Codigo')
-      .where('ss.Codigo', authorizationPassword)
-      .orWhere('ss.CodigoDocumento', authorizationPassword)
-      .select('tsss.Codigo as situacaoCodigo')
+    interface GuideQueryResult {
+      guiaCodigo: string;
+      ssParecer: number | null;
+      ItemSolServicoParecer: number;
+    }
+
+    const query = knex('dbo.SolicitacaoServico as ss')
+      .leftJoin('dbo.TipoParSolServico as tpss', 'ss.Parecer', 'tpss.Codigo')
+      .select(
+        'ss.Codigo as guiaCodigo',
+        'ss.Parecer as ssParecer',
+        knex.raw(`
+          (SELECT COUNT(iss.ParecerAuditoria)
+           FROM dbo.ItemSolServico iss
+           WHERE iss.Solicitacao = ss.AutoId
+           AND (iss.ParecerAuditoria = 2 OR iss.ParecerAuditoria IS NULL)) AS ItemSolServicoParecer
+        `)
+      )
+      .where(function () {
+        this.where('ss.Codigo', authorizationPassword).orWhere(
+          'ss.CodigoDocumento',
+          authorizationPassword
+        );
+      })
       .first();
 
-    if (!guide) {
+    const result = (await query) as GuideQueryResult;
+
+    if (!result) {
       return null; // Guia não encontrada
     }
 
     let status: InvoiceStatus['status'];
 
-    switch (guide.situacaoCodigo) {
-      case 7:
-        status = 'Authorized';
-        break;
-      case 8:
-        status = 'Denied'; // Assumindo que 8 é Cancelado/Negado
-        break;
-      case 1:
-      case 2:
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 9:
-      case 10:
-      case 11:
-      case 12:
-      case 13:
-      case 14:
-      case 15:
-        status = 'Under Audit';
-        break;
-      default:
-        status = 'Under Audit'; // Default para situações desconhecidas
+    // Implementar a lógica do CASE statement em TypeScript
+    if (result.ssParecer === 2) {
+      status = 'Denied'; // Negado(a)
+    } else if (result.ssParecer === 1 && result.ItemSolServicoParecer === 0) {
+      status = 'Authorized'; // Liberado(a) Totalmente
+    } else if (result.ssParecer === 1 && result.ItemSolServicoParecer > 0) {
+      status = 'Authorized'; // Liberado(a) Parcialmente (mapeado para Authorized)
+    } else if (result.ssParecer === null && result.ItemSolServicoParecer === 0) {
+      status = 'Under Audit'; // Em Auditoria
+    } else {
+      // Caso padrão para situações não mapeadas explicitamente
+      status = 'Under Audit';
     }
 
     return {

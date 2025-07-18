@@ -8,3 +8,4 @@ export * from './common.schemas';
 
 // Feature-specific schemas
 export * from './patient.schemas';
+export * from './guide.schemas';

@@ -1,42 +1,41 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { Static, Type } from '@sinclair/typebox';
-
-// Schemas for Medical Guide (Guia Médico)
-const MedicalGuideQuery = Type.Object({
-  networkOption: Type.String(),
-});
-type MedicalGuideQueryType = Static<typeof MedicalGuideQuery>;
-
-const MedicalGuideResponse = Type.Object({
-  name: Type.String(),
-  specialty: Type.String(),
-  address: Type.String(),
-  phone: Type.String(),
-});
-type MedicalGuideResponseType = Static<typeof MedicalGuideResponse>;
+import { 
+  MedicalGuideQuerySchema, 
+  MedicalGuidePaginatedResponseSchema,
+  MedicalGuideQueryType,
+  MedicalGuidePaginatedResponseType,
+  ErrorResponse,
+  ErrorResponseType
+} from '../schemas';
 
 export default fp(async (app: FastifyInstance) => {
   const professionalService = app.professionalService;
 
-  // Endpoint: Medical Guide (Guia Médico)
-  app.get<{ Querystring: MedicalGuideQueryType; Reply: MedicalGuideResponseType[] }>(
+  // Endpoint: Medical Guide (Guia Médico) with Pagination
+  app.get<{ 
+    Querystring: MedicalGuideQueryType; 
+    Reply: MedicalGuidePaginatedResponseType | ErrorResponseType 
+  }>(
     '/guide/medical',
     {
       preHandler: [app.authenticate],
       schema: {
-        querystring: MedicalGuideQuery,
+        querystring: MedicalGuideQuerySchema,
         response: {
-          200: Type.Array(MedicalGuideResponse),
+          200: MedicalGuidePaginatedResponseSchema,
+          400: ErrorResponse,
         },
       },
     },
     async (request, reply) => {
       const tenantId = request.tenantId!; // Extraído do JWT
-      const { networkOption } = request.query;
+      const { networkOption, page = 1, limit = 10 } = request.query;
       const professionals = await professionalService.getMedicalInvoice(
         tenantId,
         networkOption,
+        page,
+        limit,
         app
       );
       return reply.send(professionals);

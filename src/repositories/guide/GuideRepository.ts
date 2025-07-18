@@ -1,10 +1,12 @@
 import { FastifyInstance } from 'fastify';
-import { MedicalGuide } from '../../types/guide.types';
+import { MedicalGuidePaginatedResponse } from '../../types/guide.types';
 
 export interface GuideRepository {
   getMedicalGuide(
     tenantId: string,
     networkOption: string,
+    page: number,
+    limit: number,
     app?: FastifyInstance
-  ): Promise<MedicalGuide[]>;
+  ): Promise<MedicalGuidePaginatedResponse>;
 }
