@@ -1,5 +1,9 @@
 import { FastifyInstance } from 'fastify';
-import { MedicalGuidePaginatedResponse, PaginationMetadata, MedicalGuide } from '../../../types/guide.types';
+import {
+  MedicalGuidePaginatedResponse,
+  PaginationMetadata,
+  MedicalGuide,
+} from '../../../types/guide.types';
 import { GuideRepository } from '../GuideRepository';
 import { HttpError } from '../../../errors/http.error';
 
@@ -34,9 +38,13 @@ export class SqlServerGuideRepository implements GuideRepository {
     app?: FastifyInstance
   ): Promise<MedicalGuidePaginatedResponse> {
     this.validateInputs(tenantId, networkOption, page, limit);
-    
+
     if (!app) {
-      throw new HttpError(500, 'FastifyInstance is required for database access', 'Internal Server Error');
+      throw new HttpError(
+        500,
+        'FastifyInstance is required for database access',
+        'Internal Server Error'
+      );
     }
 
     const knex = await app.getDbPool(tenantId);
@@ -99,7 +107,12 @@ export class SqlServerGuideRepository implements GuideRepository {
     };
   }
 
-  private validateInputs(tenantId: string, networkOption: string, page: number, limit: number): void {
+  private validateInputs(
+    tenantId: string,
+    networkOption: string,
+    page: number,
+    limit: number
+  ): void {
     if (!tenantId?.trim()) {
       throw new HttpError(400, 'Tenant ID is required', 'Bad Request');
     }
@@ -113,7 +126,11 @@ export class SqlServerGuideRepository implements GuideRepository {
     }
 
     if (limit < MIN_LIMIT || limit > MAX_LIMIT) {
-      throw new HttpError(400, `Limit must be between ${MIN_LIMIT} and ${MAX_LIMIT}`, 'Bad Request');
+      throw new HttpError(
+        400,
+        `Limit must be between ${MIN_LIMIT} and ${MAX_LIMIT}`,
+        'Bad Request'
+      );
     }
   }
 
@@ -141,11 +158,11 @@ export class SqlServerGuideRepository implements GuideRepository {
   private formatPhoneNumber(ddd: string, phoneNumber: string): string {
     const cleanDdd = ddd?.trim();
     const cleanPhone = phoneNumber?.trim();
-    
+
     if (!cleanDdd || !cleanPhone) {
       return '';
     }
-    
+
     return `+55 ${cleanDdd} ${cleanPhone}`;
   }
 }

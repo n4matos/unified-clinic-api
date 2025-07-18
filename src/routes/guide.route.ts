@@ -1,21 +1,21 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { 
-  MedicalGuideQuerySchema, 
+import {
+  MedicalGuideQuerySchema,
   MedicalGuidePaginatedResponseSchema,
   MedicalGuideQueryType,
   MedicalGuidePaginatedResponseType,
   ErrorResponse,
-  ErrorResponseType
+  ErrorResponseType,
 } from '../schemas';
 
 export default fp(async (app: FastifyInstance) => {
   const professionalService = app.professionalService;
 
   // Endpoint: Medical Guide (Guia Médico) with Pagination
-  app.get<{ 
-    Querystring: MedicalGuideQueryType; 
-    Reply: MedicalGuidePaginatedResponseType | ErrorResponseType 
+  app.get<{
+    Querystring: MedicalGuideQueryType;
+    Reply: MedicalGuidePaginatedResponseType | ErrorResponseType;
   }>(
     '/guide/medical',
     {
