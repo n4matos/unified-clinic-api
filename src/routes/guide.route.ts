@@ -31,7 +31,7 @@ export default fp(async (app: FastifyInstance) => {
     async (request, reply) => {
       const tenantId = request.tenantId!; // Extraído do JWT
       const { networkOption, page = 1, limit = 10 } = request.query;
-      const professionals = await professionalService.getMedicalInvoice(
+      const professionals = await professionalService.getMedicalGuide(
         tenantId,
         networkOption,
         page,

@@ -1,6 +1,14 @@
 import { FastifyInstance } from 'fastify';
-import { MedicalGuidePaginatedResponse, PaginationMetadata } from '../../../types/guide.types';
+import { MedicalGuidePaginatedResponse, PaginationMetadata, MedicalGuide } from '../../../types/guide.types';
 import { GuideRepository } from '../GuideRepository';
+import { HttpError } from '../../../errors/http.error';
+
+// Constantes para tipos padrão
+const DEFAULT_ADDRESS_TYPE = 'Professional';
+const DEFAULT_PHONE_TYPE = 'Professional';
+const MIN_PAGE = 1;
+const MIN_LIMIT = 1;
+const MAX_LIMIT = 100;
 
 // Tipo para os dados brutos do banco
 interface DatabaseProfessionalRecord {
@@ -19,17 +27,19 @@ interface DatabaseProfessionalRecord {
 
 export class SqlServerGuideRepository implements GuideRepository {
   async getMedicalGuide(
-    _tenantId: string,
+    tenantId: string,
     networkOption: string,
     page: number = 1,
     limit: number = 10,
     app?: FastifyInstance
   ): Promise<MedicalGuidePaginatedResponse> {
+    this.validateInputs(tenantId, networkOption, page, limit);
+    
     if (!app) {
-      throw new Error('FastifyInstance is required for database access');
+      throw new HttpError(500, 'FastifyInstance is required for database access', 'Internal Server Error');
     }
 
-    const knex = await app.getDbPool(_tenantId);
+    const knex = await app.getDbPool(tenantId);
 
     // Query base para buscar os profissionais
     const baseQuery = knex('dbo.PrestadorServico as ps')
@@ -48,10 +58,7 @@ export class SqlServerGuideRepository implements GuideRepository {
       .where('cp.Codigo', networkOption);
 
     // Contar total de registros
-    const totalResult = await baseQuery
-      .clone()
-      .countDistinct('ps.AutoId as total')
-      .first();
+    const totalResult = await baseQuery.clone().countDistinct('ps.AutoId as total').first();
 
     const total = Number(totalResult?.total) || 0;
     const totalPages = Math.ceil(total / limit);
@@ -75,24 +82,7 @@ export class SqlServerGuideRepository implements GuideRepository {
       .limit(limit)
       .offset(offset);
 
-    const data = professionals.map((prof: DatabaseProfessionalRecord) => ({
-      name: prof.name || '',
-      specialty: prof.specialty || '',
-      address: {
-        type: 'Professional', // Tipo padrão para endereços profissionais
-        street: prof.street || '',
-        number: prof.number || '',
-        complement: prof.complement || undefined,
-        neighborhood: prof.neighborhood || '',
-        city: prof.city || '',
-        state: prof.state || '',
-        zipCode: prof.zipCode || '',
-      },
-      phone: {
-        type: 'Professional', // Tipo padrão para telefones profissionais
-        number: prof.ddd && prof.phoneNumber ? `+55 ${prof.ddd} ${prof.phoneNumber}`.trim() : '',
-      },
-    }));
+    const data = professionals.map(this.mapDatabaseRecordToMedicalGuide);
 
     const pagination: PaginationMetadata = {
       page,
@@ -107,5 +97,55 @@ export class SqlServerGuideRepository implements GuideRepository {
       data,
       pagination,
     };
+  }
+
+  private validateInputs(tenantId: string, networkOption: string, page: number, limit: number): void {
+    if (!tenantId?.trim()) {
+      throw new HttpError(400, 'Tenant ID is required', 'Bad Request');
+    }
+
+    if (!networkOption?.trim()) {
+      throw new HttpError(400, 'Network option is required', 'Bad Request');
+    }
+
+    if (page < MIN_PAGE) {
+      throw new HttpError(400, `Page must be at least ${MIN_PAGE}`, 'Bad Request');
+    }
+
+    if (limit < MIN_LIMIT || limit > MAX_LIMIT) {
+      throw new HttpError(400, `Limit must be between ${MIN_LIMIT} and ${MAX_LIMIT}`, 'Bad Request');
+    }
+  }
+
+  private mapDatabaseRecordToMedicalGuide(record: DatabaseProfessionalRecord): MedicalGuide {
+    return {
+      name: record.name?.trim() || '',
+      specialty: record.specialty?.trim() || '',
+      address: {
+        type: DEFAULT_ADDRESS_TYPE,
+        street: record.street?.trim() || '',
+        number: record.number?.trim() || '',
+        complement: record.complement?.trim() || undefined,
+        neighborhood: record.neighborhood?.trim() || '',
+        city: record.city?.trim() || '',
+        state: record.state?.trim() || '',
+        zipCode: record.zipCode?.trim() || '',
+      },
+      phone: {
+        type: DEFAULT_PHONE_TYPE,
+        number: this.formatPhoneNumber(record.ddd, record.phoneNumber),
+      },
+    };
+  }
+
+  private formatPhoneNumber(ddd: string, phoneNumber: string): string {
+    const cleanDdd = ddd?.trim();
+    const cleanPhone = phoneNumber?.trim();
+    
+    if (!cleanDdd || !cleanPhone) {
+      return '';
+    }
+    
+    return `+55 ${cleanDdd} ${cleanPhone}`;
   }
 }

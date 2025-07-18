@@ -10,7 +10,7 @@ export class ProfessionalService {
     this.logger = logger;
   }
 
-  async getMedicalInvoice(
+  async getMedicalGuide(
     tenantId: string,
     networkOption: string,
     page: number = 1,
@@ -21,7 +21,7 @@ export class ProfessionalService {
     const logger = this.logger?.withTenant(tenantId);
 
     logger?.business('Fetching medical guide', {
-      operation: 'getMedicalInvoice',
+      operation: 'getMedicalGuide',
       resource: 'medicalGuide',
       tenantId,
       networkOption,
@@ -34,7 +34,7 @@ export class ProfessionalService {
       const result = await agent.getMedicalGuide(tenantId, networkOption, page, limit, app);
 
       logger?.business('Medical guide retrieved successfully', {
-        operation: 'getMedicalInvoice',
+        operation: 'getMedicalGuide',
         resource: 'medicalGuide',
         tenantId,
         networkOption,
@@ -45,7 +45,7 @@ export class ProfessionalService {
       return result;
     } catch (error) {
       logger?.error('Failed to fetch medical guide', error as Error, {
-        operation: 'getMedicalInvoice',
+        operation: 'getMedicalGuide',
         resource: 'medicalGuide',
         tenantId,
         networkOption,

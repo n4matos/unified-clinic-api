@@ -5,8 +5,8 @@ export interface GuideAgent {
   getMedicalGuide(
     tenantId: string,
     networkOption: string,
-    page?: number,
-    limit?: number,
+    page: number,
+    limit: number,
     app?: FastifyInstance
   ): Promise<MedicalGuidePaginatedResponse>;
 }
