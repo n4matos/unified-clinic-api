@@ -11,16 +11,16 @@ export default fp(
     // Só valida se tenants existem no banco de configuração, não conecta ainda
     try {
       const tenants = await dbManager.getAllTenants();
-      app.log.info(`📋 Found ${tenants.length} tenants (connections will be lazy-loaded)`);
+      app.log.info(`Found ${tenants.length} tenants (connections will be lazy-loaded)`);
 
       // Log dos tenants disponíveis para debug
       tenants.forEach((tenant) => {
         app.log.info(
-          `📌 Available tenant: ${tenant.tenant_id} (${tenant.db_type}://${tenant.db_host}:${tenant.db_port}/${tenant.db_name})`
+          `Available tenant: ${tenant.tenant_id} (${tenant.db_type}://${tenant.db_host}:${tenant.db_port}/${tenant.db_name})`
         );
       });
     } catch (error) {
-      app.log.error({ error }, '❌ Failed to load tenant configurations from database');
+      app.log.error({ error }, 'Failed to load tenant configurations from database');
       throw new Error('Cannot start without tenant configurations');
     }
 
@@ -32,7 +32,7 @@ export default fp(
 
         // Log apenas na primeira conexão (lazy loading)
         if (!lazyLoadedTenants.includes(tenantId)) {
-          app.log.info({ tenantId }, `[${tenantId}] 🔄 Lazy-loaded tenant database connection`);
+          app.log.info({ tenantId }, `[${tenantId}] Lazy-loaded tenant database connection`);
           lazyLoadedTenants.push(tenantId);
         }
 
@@ -45,7 +45,7 @@ export default fp(
             errorType: 'tenant_connection_failed',
             timestamp: new Date().toISOString(),
           },
-          `[${tenantId}] ❌ Failed to lazy-load tenant database`
+          `[${tenantId}] Failed to lazy-load tenant database`
         );
 
         // Registra falha apenas uma vez
@@ -71,7 +71,7 @@ export default fp(
     app.addHook('onClose', async () => {
       await dbManager.closeAllConnections();
       app.log.info(
-        `🔒 All tenant pools closed. Stats: ${lazyLoadedTenants.length} lazy-loaded, ${failedTenantConnections.length} failed`
+        `All tenant pools closed. Stats: ${lazyLoadedTenants.length} lazy-loaded, ${failedTenantConnections.length} failed`
       );
     });
   },

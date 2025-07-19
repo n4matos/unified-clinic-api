@@ -8,13 +8,13 @@ async function start(): Promise<void> {
 
   /* graceful shutdown */
   const shutdown = async (signal: string) => {
-    app.log.info(`↙️  ${signal} – shutting down`);
+    app.log.info(`${signal} – shutting down`);
     try {
       await app.close();
-      app.log.info('✅ HTTP server closed');
+      app.log.info('HTTP server closed');
       process.exit(0);
     } catch (err) {
-      app.log.fatal(err, '❌ Error during shutdown');
+      app.log.fatal(err, 'Error during shutdown');
       process.exit(1);
     }
   };
@@ -32,9 +32,9 @@ async function start(): Promise<void> {
 
   try {
     await app.listen({ port: config.port, host: '0.0.0.0' });
-    app.log.info(`🚀  Server ready at http://localhost:${config.port}`);
-    app.log.info(`📍 Health check → /health/clinics`);
-    app.log.info(`🏗️  Environment: ${config.environment}`);
+    app.log.info(`Server ready at http://localhost:${config.port}`);
+    app.log.info(`Health check → /health/clinics`);
+    app.log.info(`Environment: ${config.environment}`);
   } catch (err) {
     app.log.fatal(err, 'Failed to start server');
     process.exit(1);
