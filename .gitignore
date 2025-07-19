@@ -147,3 +147,5 @@ data/
 tmp/
 temp/
 
+# Claude files
+.claude/

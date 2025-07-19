@@ -17,7 +17,6 @@ import { HookRegistry } from '../hooks/registry';
 // Rotas
 import authRoutes from '../routes/auth.route';
 import healthRoutes from '../routes/health.route';
-import tenantRoutes from '../routes/tenant.route';
 import patientRoutes from '../routes/patient.route';
 import guideRoutes from '../routes/guide.route';
 
@@ -51,7 +50,6 @@ export class PluginRegistry {
   static async registerPublicRoutes(app: FastifyInstance): Promise<void> {
     await app.register(authRoutes);
     await app.register(healthRoutes);
-    await app.register(tenantRoutes);
   }
 
   /**
