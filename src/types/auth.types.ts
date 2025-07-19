@@ -8,7 +8,6 @@ export interface JWTPayload {
 export interface RefreshToken {
   id: string;
   client_id: string;
-  tenant_id: string;
   token_hash: string;
   expires_at: Date;
   created_at: Date;

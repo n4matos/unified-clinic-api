@@ -29,10 +29,10 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
-      const tenantId = request.tenantId!; // Extraído do JWT
+      const clinicId = request.tenantId!; // Vem do header X-Clinic-ID
       const { networkOption, page = 1, limit = 10 } = request.query;
       const professionals = await professionalService.getMedicalGuide(
-        tenantId,
+        clinicId,
         networkOption,
         page,
         limit,

@@ -25,7 +25,7 @@ export default fp(async (app: FastifyInstance) => {
 
     // Gerar access token e refresh token
     const accessToken = JWTService.generateAccessToken(client_id);
-    const refreshToken = await refreshTokenService.createRefreshToken(client_id, 'multi_tenant');
+    const refreshToken = await refreshTokenService.createRefreshToken(client_id);
 
     const response: LoginResponse = {
       access_token: accessToken,

@@ -38,11 +38,11 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
-      const tenantId = request.tenantId!; // Extraído do JWT
+      const clinicId = request.tenantId!; // Vem do header X-Clinic-ID
       const { cpf, cardNumber } = request.body;
 
       const registrationData = await patientService.getRegistrationData(
-        tenantId,
+        clinicId,
         app,
         cpf,
         cardNumber
@@ -68,9 +68,9 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
-      const tenantId = request.tenantId!; // Extraído do JWT
+      const clinicId = request.tenantId!; // Vem do header X-Clinic-ID
       const { cpf, cardNumber } = request.body;
-      const invoice = await patientService.getInvoiceReplacement(tenantId, app, cpf, cardNumber);
+      const invoice = await patientService.getInvoiceReplacement(clinicId, app, cpf, cardNumber);
       return reply.send(invoice);
     }
   );
@@ -94,9 +94,9 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
-      const tenantId = request.tenantId!; // Extraído do JWT
+      const clinicId = request.tenantId!; // Vem do header X-Clinic-ID
       const { authorizationPassword } = request.params;
-      const status = await patientService.getGuideStatus(tenantId, app, authorizationPassword);
+      const status = await patientService.getGuideStatus(clinicId, app, authorizationPassword);
       return reply.send(status);
     }
   );

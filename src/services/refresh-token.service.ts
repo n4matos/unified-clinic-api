@@ -10,7 +10,7 @@ export class RefreshTokenService {
     this.app = app;
   }
 
-  async createRefreshToken(clientId: string, context: string = 'multi_tenant'): Promise<string> {
+  async createRefreshToken(clientId: string): Promise<string> {
     const knex = this.app.getConfigDb();
 
     // Gerar token único
@@ -28,7 +28,6 @@ export class RefreshTokenService {
     await knex('refresh_tokens').insert({
       id: crypto.randomUUID(),
       client_id: clientId,
-      tenant_id: context, // Usar context em vez de tenantId específico
       token_hash: tokenHash,
       expires_at: expiresAt,
       created_at: new Date(),
