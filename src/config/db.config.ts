@@ -3,6 +3,7 @@ import { config } from '../config';
 
 export interface TenantDbConfig {
   tenant_id: string;
+  name: string;
   db_type: 'pg' | 'mssql' | 'mysql';
   db_host: string;
   db_port: number;

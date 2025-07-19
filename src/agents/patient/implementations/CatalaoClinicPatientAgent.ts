@@ -5,7 +5,7 @@ import { SqlServerPatientRepository } from '../../../repositories/patient/implem
 import { RegistrationData, Invoice, InvoiceStatus } from '../../../types';
 import { HttpError } from '../../../errors/http.error';
 
-export class DefaultPatientAgent implements PatientAgent {
+export class CatalaoClinicPatientAgent implements PatientAgent {
   private patientRepository: PatientRepository;
 
   constructor() {

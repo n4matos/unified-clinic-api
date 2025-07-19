@@ -29,7 +29,7 @@ export default fp(async (app: FastifyInstance) => {
       },
     },
     async (request, reply) => {
-      const clinicId = request.tenantId!; // Vem do header X-Clinic-ID
+      const clinicId = request.clinicId!; // Vem do header X-Clinic-ID
       const { networkOption, page = 1, limit = 10 } = request.query;
       const professionals = await professionalService.getMedicalGuide(
         clinicId,

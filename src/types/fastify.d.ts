@@ -16,13 +16,7 @@ declare module 'fastify' {
     isConfigDbHealthy(): Promise<boolean>;
 
     // Multi-tenancy decorators
-    getDbPool: (tenantId: string) => Promise<DbPool>;
-    getTenantStats: () => {
-      lazyLoadedTenants: number;
-      failedConnections: number;
-      activeConnections: string[];
-      failedTenants: string[];
-    };
+    getDbPool: (clinicId: string) => Promise<DbPool>;
 
     // Authentication decorator
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
@@ -36,7 +30,5 @@ declare module 'fastify' {
 
   interface FastifyRequest {
     clinicId?: string;
-    tenantId?: string;
-    clientId?: string;
   }
 }

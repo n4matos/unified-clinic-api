@@ -4,7 +4,7 @@ import { GuideRepository } from '../../../repositories/guide/GuideRepository';
 import { SqlServerGuideRepository } from '../../../repositories/guide/implementations/SqlServerGuideRepository';
 import { MedicalGuidePaginatedResponse } from '../../../types';
 
-export class DefaultGuideAgent implements GuideAgent {
+export class CatalaoClinicGuideAgent implements GuideAgent {
   private guideRepository: GuideRepository;
 
   constructor(guideRepository?: GuideRepository) {

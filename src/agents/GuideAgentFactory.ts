@@ -1,15 +1,14 @@
 import { GuideAgent } from './guide/GuideAgent';
-import { DefaultGuideAgent } from './guide/implementations/DefaultGuideAgent';
+import { CatalaoClinicGuideAgent } from './guide/implementations/CatalaoClinicGuideAgent';
 
 export class GuideAgentFactory {
-  static create(tenantId: string): GuideAgent {
-    // TODO: Implementar a lógica de seleção de agente com base no tenantId
-    // Por enquanto, apenas a implementação padrão será utilizada.
-    switch (tenantId) {
-      // case 'tenant-a':
-      //   return new TenantACustomGuideAgent();
+  static create(clinicId: string): GuideAgent {
+    // Para Clínica Catalão, usamos sempre o mesmo agent
+    // No futuro, pode ser expandido para outras clínicas
+    switch (clinicId) {
+      case 'catalao':
       default:
-        return new DefaultGuideAgent();
+        return new CatalaoClinicGuideAgent();
     }
   }
 }

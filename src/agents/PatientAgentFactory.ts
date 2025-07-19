@@ -1,15 +1,14 @@
 import { PatientAgent } from './patient/PatientAgent';
-import { DefaultPatientAgent } from './patient/implementations/DefaultPatientAgent';
+import { CatalaoClinicPatientAgent } from './patient/implementations/CatalaoClinicPatientAgent';
 
 export class PatientAgentFactory {
-  static create(tenantId: string): PatientAgent {
-    // TODO: Implementar a lógica de seleção de agente com base no tenantId
-    // Por enquanto, apenas a implementação padrão será utilizada.
-    switch (tenantId) {
-      // case 'tenant-a':
-      //   return new TenantACustomPatientAgent();
+  static create(clinicId: string): PatientAgent {
+    // Para Clínica Catalão, usamos sempre o mesmo agent
+    // No futuro, pode ser expandido para outras clínicas
+    switch (clinicId) {
+      case 'catalao':
       default:
-        return new DefaultPatientAgent();
+        return new CatalaoClinicPatientAgent();
     }
   }
 }

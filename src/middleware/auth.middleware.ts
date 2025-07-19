@@ -83,9 +83,7 @@ export default fp(async (app) => {
       );
 
       // 6. Definir contexto da requisição
-      request.tenantId = clinicId; // ← Agora vem do header!
-      request.clientId = clientId;
-      request.clinicId = clinicId; // Compatibilidade
+      request.clinicId = clinicId; // Vem do header X-Clinic-ID
     } catch (error) {
       app.log.warn(
         {

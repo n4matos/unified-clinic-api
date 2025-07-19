@@ -57,16 +57,6 @@ export default fp(
       }
     });
 
-    // Decorator para estatísticas de conexões
-    app.decorate('getTenantStats', () => {
-      return {
-        lazyLoadedTenants: lazyLoadedTenants.length,
-        failedConnections: failedTenantConnections.length,
-        activeConnections: lazyLoadedTenants.filter((t) => !failedTenantConnections.includes(t)),
-        failedTenants: failedTenantConnections,
-      };
-    });
-
     // Hook para cleanup ao fechar a aplicação
     app.addHook('onClose', async () => {
       await dbManager.closeAllConnections();
