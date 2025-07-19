@@ -49,7 +49,7 @@ Isso permite máxima flexibilidade, permitindo que cada tenant use o tipo de ban
 #### Rotas da API
 
 - `src/routes/tenant.route.ts`: Rotas administrativas para gerenciar tenants (CRUD completo).
-- `src/routes/health.route.ts`: Rotas de health check para monitoramento da aplicação e status dos bancos.
+- `src/routes/health.route.ts`: Rotas de health check para monitoramento da aplicação e status do banco.
 
 #### Infraestrutura
 
@@ -228,11 +228,8 @@ Você pode verificar o status da aplicação através dos endpoints:
 # Status geral da aplicação
 curl http://localhost:3000/health
 
-# Status dos tenants e suas conexões
-curl http://localhost:3000/health/clinics
-
-# Status do banco central
-curl http://localhost:3000/health/configdb
+# Status do banco de dados
+curl http://localhost:3000/health/database
 ```
 
 ### Gerenciamento de Tenants
@@ -429,16 +426,10 @@ DELETE /tenants/:tenantId
 GET /health
 ```
 
-#### Status dos Tenants
+#### Status do Banco de Dados
 
 ```http
-GET /health/clinics
-```
-
-#### Status do Banco Central
-
-```http
-GET /health/configdb
+GET /health/database
 ```
 
 ## Configuração do Ambiente
@@ -541,8 +532,7 @@ docker-compose exec postgres psql -U user -d unified_clinic_clinics -f /scripts/
 ### Health Checks
 
 - `/health`: Status geral da aplicação
-- `/health/clinics`: Status dos tenants e suas conexões
-- `/health/configdb`: Status do banco central
+- `/health/database`: Status do banco de dados
 
 ### Logs
 

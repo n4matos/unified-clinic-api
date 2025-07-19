@@ -2,6 +2,7 @@ import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
 
 export default fp(async (app: FastifyInstance) => {
+  // Health check básico da aplicação
   app.get('/health', async (request, reply) => {
     request.log.info('health check - general status');
 
@@ -12,37 +13,9 @@ export default fp(async (app: FastifyInstance) => {
     });
   });
 
-  app.get('/health/clinics', async (request, reply) => {
-    const tenantStats = app.getTenantStats();
-    const overallStatus = tenantStats.failedConnections > 0 ? 'degraded' : 'healthy';
-    const message =
-      overallStatus === 'degraded'
-        ? 'API is running with some tenant connection failures'
-        : 'API is running with lazy-loaded tenant connections';
-
-    request.log.info(
-      {
-        status: overallStatus,
-        ...tenantStats,
-      },
-      'health check - clinics status'
-    );
-
-    return reply.send({
-      status: overallStatus,
-      message,
-      statistics: {
-        lazyLoadedTenants: tenantStats.lazyLoadedTenants,
-        failedConnections: tenantStats.failedConnections,
-        activeConnections: tenantStats.activeConnections.length,
-        failedTenants: tenantStats.failedTenants,
-      },
-      timestamp: new Date().toISOString(),
-    });
-  });
-
-  app.get('/health/configdb', async (request, reply) => {
-    request.log.info('health check - config database status');
+  // Health check simples do banco de dados
+  app.get('/health/database', async (request, reply) => {
+    request.log.info('health check - database status');
 
     try {
       const isHealthy = await app.isConfigDbHealthy();
@@ -50,22 +23,22 @@ export default fp(async (app: FastifyInstance) => {
       if (isHealthy) {
         return reply.send({
           status: 'healthy',
-          message: 'Config database is responsive',
+          message: 'Database is responsive',
           timestamp: new Date().toISOString(),
         });
       } else {
         return reply.status(503).send({
           status: 'unhealthy',
-          message: 'Config database is not responsive',
+          message: 'Database is not responsive',
           timestamp: new Date().toISOString(),
         });
       }
     } catch (error) {
-      request.log.error({ error }, 'Config database health check failed');
+      request.log.error({ error }, 'Database health check failed');
 
       return reply.status(503).send({
         status: 'unhealthy',
-        message: 'Config database health check failed',
+        message: 'Database health check failed',
         timestamp: new Date().toISOString(),
       });
     }

@@ -33,7 +33,7 @@ async function start(): Promise<void> {
   try {
     await app.listen({ port: config.port, host: '0.0.0.0' });
     app.log.info(`Server ready at http://localhost:${config.port}`);
-    app.log.info(`Health check → /health/clinics`);
+    app.log.info(`Health check → /health`);
     app.log.info(`Environment: ${config.environment}`);
   } catch (err) {
     app.log.fatal(err, 'Failed to start server');

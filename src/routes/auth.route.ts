@@ -23,7 +23,7 @@ export default fp(async (app: FastifyInstance) => {
 
     const client = await clientService.validateClient(client_id, client_secret);
 
-    // Gerar access token e refresh token (SEM tenant_id)
+    // Gerar access token e refresh token
     const accessToken = JWTService.generateAccessToken(client_id);
     const refreshToken = await refreshTokenService.createRefreshToken(client_id, 'multi_tenant');
 
@@ -60,7 +60,7 @@ export default fp(async (app: FastifyInstance) => {
       // Validar o refresh token
       const tokenData = await refreshTokenService.validateRefreshToken(refresh_token);
 
-      // Gerar novo access token (SEM tenant_id)
+      // Gerar novo access token
       const newAccessToken = JWTService.generateAccessToken(tokenData.client_id);
 
       const response: RefreshTokenResponse = {
